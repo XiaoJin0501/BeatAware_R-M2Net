@@ -31,10 +31,15 @@ def generate_anchor_mask(ecg_signal, fs, sigma_points=5):
     :return: mask (与 ecg 等长), r_peaks_indices
     """
     # 1. R峰检测 (基于 Scipy, 简单鲁棒)
-    # 距离限制: 假设心率 < 200bpm, 也就是间隔 > 0.3s (60点)
+    # 距离限制: 假设心率 < 200bpm, 也就是间隔 > 0.3s
+    # fs = 200Hz 时, distance = 60 点
     distance = int(0.3 * fs)
-    prominence = 0.4 * (np.max(ecg_signal) - np.min(ecg_signal)) # 动态阈值
-    
+    q_high, q_low = np.percentile(ecg_signal, [99, 1])
+    # [修改点] 降低阈值系数到 0.15 (15%)
+    prominence = 0.15 * (q_high - q_low)
+    # 防止信号是直线导致 prominence 为 0
+    if prominence < 1e-6:
+        prominence = 0.1 # 给个默认值
     r_peaks, _ = find_peaks(ecg_signal, distance=distance, prominence=prominence)
     
     # 2. 生成高斯 Mask

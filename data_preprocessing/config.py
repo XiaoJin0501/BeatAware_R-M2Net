@@ -14,7 +14,7 @@ class Config:
     
     # ------------------ 信号物理参数 ------------------
     FS_RADAR_RAW = 2000
-    FS_ECG_RAW = 1000
+    FS_ECG_RAW = 2000
     FS_TARGET = 200
     
     RADAR_BANDPASS = [0.1, 16] 

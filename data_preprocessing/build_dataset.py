@@ -8,7 +8,6 @@ import sys
 # 将当前脚本所在的目录添加到 sys.path，确保能找到 config 和 src 包
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# [修正1] 直接从 config 模块导入 Config 类
 from config import Config 
 from src import radar_dsp, ecg_dsp, quality_control, utils
 
