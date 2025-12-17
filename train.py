@@ -5,74 +5,78 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import time
 
-# 引用我们写好的模块
+# --- 引入我们搭建的基础设施 ---
+from config import Config
 from .dataset import RadarDataset
-from models.BA_M2Net import BeatAwareRM2Net
-from utils.losses import TotalLoss
-
-# --- 配置参数 (Hyperparameters) ---
-CONFIG = {
-    "exp_name": "Experiment_A_Baseline",
-    "batch_size": 32,      # 显存不够可以改小 (e.g., 16)
-    "learning_rate": 1e-4, # 初始学习率
-    "epochs": 100,         # 训练轮数
-    "alpha": 1.0,          # STFT Loss 权重
-    "num_workers": 4,      # Mac 上设为 0 如果报错，Linux 上设为 4 或 8
-    
-    # 路径配置 (请修改为你实际的 h5 路径)
-    "train_path": "data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent/train.h5",
-    "test_path":  "data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent/test.h5",
-    "save_dir":   "checkpoints/"
-}
+from .models.BA_M2Net import BeatAwareRM2Net
+from .utils.losses import TotalLoss
+# logger 和 seeding 放在 utils 下 
+from .utils.logger import setup_logger
+from .utils.seeding import seed_everything
 
 def train():
-    # 1. 环境设置 (自动适配 Mac/Linux)
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-        print("🚀 Training on NVIDIA CUDA (Linux)")
-    elif torch.backends.mps.is_available():
-        device = torch.device("mps")
-        print("🍎 Training on Apple MPS (MacBook)")
-    else:
-        device = torch.device("cpu")
-        print("⚠️ Training on CPU (Slow)")
-
-    os.makedirs(CONFIG["save_dir"], exist_ok=True)
-
-    # 2. 数据准备
-    print(f"Loading data from: {CONFIG['train_path']}")
-    train_set = RadarDataset(CONFIG['train_path'])
-    test_set = RadarDataset(CONFIG['test_path'])
+    # 1. 第一件事：固定随机种子 (保证每次跑结果一样)
+    seed_everything(Config.SEED)
     
-    train_loader = DataLoader(train_set, batch_size=CONFIG['batch_size'], shuffle=True, num_workers=CONFIG['num_workers'])
-    test_loader = DataLoader(test_set, batch_size=CONFIG['batch_size'], shuffle=False, num_workers=CONFIG['num_workers'])
+    # 2. 初始化日志系统 (同时输出到屏幕和文件)
+    # 日志会保存在 experiments/Exp_Name/logs/train.log
+    logger = setup_logger(Config.LOG_DIR, name="train")
     
-    print(f"Train samples: {len(train_set)}, Test samples: {len(test_set)}")
+    logger.info(f"🚀 Experiment Started: {Config.EXP_NAME}")
+    logger.info(f"📂 Data Directory: {Config.DATA_DIR}")
+    logger.info(f"💻 Device: {Config.DEVICE}")
 
-    # 3. 模型与 Loss
-    model = BeatAwareRM2Net(in_channels=1, base_channels=32).to(device)
-    criterion = TotalLoss(alpha=CONFIG['alpha']).to(device)
-    optimizer = optim.AdamW(model.parameters(), lr=CONFIG['learning_rate'], weight_decay=1e-2)
+    # 3. 数据准备
+    logger.info("⏳ Loading datasets...")
+    train_set = RadarDataset(Config.TRAIN_H5)
+    test_set = RadarDataset(Config.TEST_H5)
+    
+    train_loader = DataLoader(
+        train_set, 
+        batch_size=Config.BATCH_SIZE, 
+        shuffle=True, 
+        num_workers=Config.NUM_WORKERS
+    )
+    test_loader = DataLoader(
+        test_set, 
+        batch_size=Config.BATCH_SIZE, 
+        shuffle=False, 
+        num_workers=Config.NUM_WORKERS
+    )
+    
+    logger.info(f"✅ Data loaded. Train samples: {len(train_set)}, Test samples: {len(test_set)}")
 
-    # 4. 训练循环
+    # 4. 模型与 Loss 构建
+    model = BeatAwareRM2Net(
+        in_channels=Config.IN_CHANNELS, 
+        base_channels=Config.BASE_CHANNELS
+    ).to(Config.DEVICE)
+    
+    criterion = TotalLoss(alpha=Config.ALPHA).to(Config.DEVICE)
+    optimizer = optim.AdamW(model.parameters(), lr=Config.LR, weight_decay=Config.WEIGHT_DECAY)
+    
+    logger.info(f"🧠 Model initialized. Alpha for STFT Loss: {Config.ALPHA}")
+
+    # 5. 训练主循环
     best_val_loss = float('inf')
     
-    for epoch in range(CONFIG['epochs']):
-        # --- Training ---
+    for epoch in range(Config.EPOCHS):
+        # --- Training Phase ---
         model.train()
         train_loss_avg = 0
-        loop = tqdm(train_loader, desc=f"Epoch {epoch+1}/{CONFIG['epochs']} [Train]")
+        
+        # 使用 tqdm 显示进度条，但不要刷屏 log 文件
+        loop = tqdm(train_loader, desc=f"Epoch {epoch+1}/{Config.EPOCHS} [Train]")
         
         for radar, ecg, mask in loop:
-            radar, ecg, mask = radar.to(device), ecg.to(device), mask.to(device)
+            radar, ecg, mask = radar.to(Config.DEVICE), ecg.to(Config.DEVICE), mask.to(Config.DEVICE)
             
             optimizer.zero_grad()
             
-            # Forward
-            # 注意：如果你的模型需要 mask 输入 (BA_M2Net), 这里传入 mask
+            # Forward (传入 Mask 用于 Anchor Branch)
             pred = model(radar, mask) 
             
-            # Loss
+            # Loss Calculation
             loss, l_time, l_freq = criterion(pred, ecg)
             
             # Backward
@@ -80,32 +84,41 @@ def train():
             optimizer.step()
             
             train_loss_avg += loss.item()
+            
+            # 进度条显示实时 Loss
             loop.set_postfix(loss=loss.item(), L1=l_time.item(), STFT=l_freq.item())
             
         train_loss_avg /= len(train_loader)
         
-        # --- Validation ---
+        # --- Validation Phase ---
         model.eval()
         val_loss_avg = 0
         with torch.no_grad():
             for radar, ecg, mask in test_loader:
-                radar, ecg, mask = radar.to(device), ecg.to(device), mask.to(device)
+                radar, ecg, mask = radar.to(Config.DEVICE), ecg.to(Config.DEVICE), mask.to(Config.DEVICE)
                 pred = model(radar, mask)
                 loss, _, _ = criterion(pred, ecg)
                 val_loss_avg += loss.item()
                 
         val_loss_avg /= len(test_loader)
         
-        print(f"Epoch {epoch+1} Result: Train Loss={train_loss_avg:.4f}, Val Loss={val_loss_avg:.4f}")
+        # --- Logging & Saving ---
+        # 这一行信息会被永久记录到 log 文件中
+        logger.info(f"Epoch {epoch+1:03d} | Train Loss: {train_loss_avg:.6f} | Val Loss: {val_loss_avg:.6f}")
         
-        # --- Save Best Model ---
+        # 保存最佳模型
         if val_loss_avg < best_val_loss:
             best_val_loss = val_loss_avg
-            save_path = os.path.join(CONFIG["save_dir"], f"{CONFIG['exp_name']}_best.pth")
-            torch.save(model.state_dict(), save_path)
-            print(f"✅ Best model saved to {save_path}")
+            save_path = os.path.join(Config.CKPT_DIR, f"{Config.EXP_NAME}_best.pth")
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': best_val_loss,
+            }, save_path)
+            logger.info(f"🌟 Best model saved to {save_path}")
 
-    print("🎉 Training Finished!")
+    logger.info("🎉 Training Finished Successfully!")
 
 if __name__ == "__main__":
     train()

@@ -1,49 +1,82 @@
-# config.py
 import os
 import torch
+import time
 
 class Config:
-    # --- 1. 实验管理 ---
-    PROJECT_NAME = "BeatAware_RM2Net"
-    EXP_NAME = "Exp_A_SubjectIndependent_Baseline" # 每次改这里区分实验
-    SEED = 42                                      # 随机种子，保证可复现
-    DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+    # =========================================================================
+    # 1. 实验基本信息 (Experiment Metadata)
+    # =========================================================================
+    PROJECT_NAME = "RQ1_BeatAware_RM2Net"
     
-    # --- 2. 路径配置 ---
+    # 实验名称 (每次跑新实验改这里，比如 "Exp_B_Ablation_NoTFiLM")
+    EXP_NAME = "Exp_A_SubjectIndependent_Baseline" 
+    
+    # 随机种子 (保证复现性)
+    SEED = 42
+    
+    # 自动检测设备 (优先 CUDA > MPS (Mac) > CPU)
+    DEVICE = (
+        "cuda" if torch.cuda.is_available() 
+        else "mps" if torch.backends.mps.is_available() 
+        else "cpu"
+    )
+
+    # =========================================================================
+    # 2. 路径配置 (Path Configuration) - 自动推导，无需硬编码
+    # =========================================================================
+    # 获取当前文件 (config.py) 所在目录，即项目根目录
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-    DATA_DIR = os.path.join(ROOT_DIR, "data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent")
-    TRAIN_PATH = os.path.join(DATA_DIR, "train.h5")
-    TEST_PATH = os.path.join(DATA_DIR, "test.h5")
     
-    # 输出目录 (自动归档)
+    # 数据集路径 (请确保 build_dataset.py 生成的文件在这里)
+    # 注意：这里假设你之前生成的 h5 文件在 data_preprocessing/processed_to_h5 下
+    DATA_DIR = os.path.join(ROOT_DIR, "data_preprocessing", "processed_to_h5", "experiment_A_SubjectIndependent")
+    TRAIN_H5 = os.path.join(DATA_DIR, "train.h5")
+    TEST_H5 = os.path.join(DATA_DIR, "test.h5")
+    
+    # 输出目录结构
     OUTPUT_DIR = os.path.join(ROOT_DIR, "experiments", EXP_NAME)
-    CKPT_DIR = os.path.join(OUTPUT_DIR, "checkpoints")
-    LOG_DIR = os.path.join(OUTPUT_DIR, "logs")
-    RESULT_DIR = os.path.join(OUTPUT_DIR, "results") # 存放测试结果和图表
     
-    # --- 3. 模型参数 (Model Hyperparams) ---
-    INPUT_LEN = 1600
-    IN_CHANNELS = 1
-    BASE_CHANNELS = 32
+    # 自动生成的子目录
+    CKPT_DIR = os.path.join(OUTPUT_DIR, "checkpoints")   # 存模型权重
+    LOG_DIR = os.path.join(OUTPUT_DIR, "logs")           # 存日志文件
+    RESULT_DIR = os.path.join(OUTPUT_DIR, "results")     # 存测试图表和 .mat
     
-    # --- 4. 训练参数 (Training) ---
-    BATCH_SIZE = 32
+    # =========================================================================
+    # 3. 数据与模型参数 (Data & Model Params)
+    # =========================================================================
+    INPUT_LEN = 1600         # 8s @ 200Hz
+    IN_CHANNELS = 1          # Radar Displacement
+    BASE_CHANNELS = 32       # 卷积基础通道数
+    
+    # =========================================================================
+    # 4. 训练超参数 (Training Hyperparameters)
+    # =========================================================================
+    BATCH_SIZE = 32          # 显存不够可调小 (e.g., 16)
     EPOCHS = 100
-    LR = 1e-4
-    WEIGHT_DECAY = 1e-2
-    NUM_WORKERS = 4 if DEVICE == "cuda" else 0 # Mac 上多线程可能报错
+    LEARNING_RATE = 1e-4
+    WEIGHT_DECAY = 1e-2      # AdamW 的权重衰减
     
-    # --- 5. Loss 参数 ---
-    ALPHA = 1.0  # STFT Loss 权重
+    # 数据加载线程数
+    # Mac (MPS) 上多线程有时会报错，设为 0 安全；Linux 上设为 4 或 8 加速
+    NUM_WORKERS = 4 if DEVICE == "cuda" else 0 
+    
+    # =========================================================================
+    # 5. Loss 参数 (Loss Function Params)
+    # =========================================================================
+    ALPHA = 1.0              # STFT Loss 的权重 (L_total = L1 + alpha * L_STFT)
+    
+    # 多分辨率 STFT 的参数配置 (参考 HiFi-GAN)
     FFT_SIZES = [1024, 2048, 512]
     HOP_SIZES = [120, 240, 50]
     WIN_LENGTHS = [600, 1200, 240]
-    
+
     @classmethod
     def makedirs(cls):
+        """自动创建所有必要的输出目录"""
         os.makedirs(cls.CKPT_DIR, exist_ok=True)
         os.makedirs(cls.LOG_DIR, exist_ok=True)
         os.makedirs(cls.RESULT_DIR, exist_ok=True)
+        print(f"📁 Created experiment directories at: {cls.OUTPUT_DIR}")
 
-# 自动创建目录
+# 导入 Config 时自动创建目录
 Config.makedirs()
