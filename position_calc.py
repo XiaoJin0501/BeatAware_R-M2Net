@@ -7,7 +7,7 @@ def advanced_trade_calc(
     entry_price,        # 开仓价格
     stop_loss_price,    # 止损价格
     direction='long',   # 方向
-    fee_rate=0.0006     # 手续费率 (默认万6，根据你的交易所调整)
+    fee_rate=0.00035     # 手续费率 (默认万6，根据你的交易所调整)
 ):
     print("="*50)
     print(f"       💰 合约交易计划书 ({'🟢 做多 Long' if direction == 'long' else '🔴 做空 Short'})")
@@ -125,9 +125,9 @@ Alloc_Pct = 0.33         # 每次投入本金的 33%
 Risk_Per_Trade = 10.0    # 如果止损，你愿意亏掉多少钱 ($)
 
 # 3. 你的图表分析 (填入你看到的点位)
-Entry_Price = 87500.0    # 打算在哪里开单
-Stop_Loss   = 86500.0    # 止损放在哪里 (技术支撑/压力位)
-Direction   = 'long'     # 'long'(做多) 或 'short'(做空)
+Entry_Price = 87100.0    # 打算在哪里开单
+Stop_Loss   = 87300.0    # 止损放在哪里 (技术支撑/压力位)
+Direction   = 'short'     # 'long'(做多) 或 'short'(做空)
 
 # 运行程序
 advanced_trade_calc(
