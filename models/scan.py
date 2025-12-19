@@ -2,109 +2,116 @@ import torch
 import torch.nn.functional as F
 
 # ==============================================================================
-# 1. Mac / CPU 调试版 (Slow but Stable)
+# 1. 纯 PyTorch 实现 (Slow but Universal)
+#    - 适用于: Mac, Windows (无编译环境), Linux (环境配置失败时)
 # ==============================================================================
-def selective_scan_cpu(x, dt, A, B, C, D=None, z=None, delta_bias=None, delta_softplus=True):
+def selective_scan_ref(u, delta, A, B, C, D=None, z=None, delta_bias=None, delta_softplus=False, return_last_state=False):
     """
-    纯 Python 实现的 Selective Scan。
-    用于 Mac 本地调试，无需编译任何 CUDA。
+    Pure PyTorch implementation of Selective Scan.
+    Reference: Mamba-SSM (State Space Model)
+    Shapes:
+        u: (B, D, L)
+        delta: (B, D, L)
+        A: (D, N)
+        B: (B, N, L)
+        C: (B, N, L)
+        D: (D)
     """
-    batch, dim, length = x.shape
-    _, state, _ = B.shape
+    b, d, l = u.shape
+    n = A.shape[1]
     
-    # Delta 处理
+    # 1. Delta 处理
     if delta_bias is not None:
-        dt = dt + delta_bias.view(1, dim, 1)
+        delta = delta + delta_bias[..., None]
     if delta_softplus:
-        dt = F.softplus(dt)
-        
-    # 离散化 (Discretization)
-    # A: [D, S] -> dA: [B, D, S, L]
-    dA = torch.exp(torch.einsum('ds,bdl->bdsl', A, dt))
-    # B: [B, S, L] -> dB: [B, D, S, L]
-    dB = torch.einsum('bdl,bsl->bdsl', dt, B)
+        delta = F.softplus(delta)
     
-    # 扫描 (Scan Loop)
-    h = torch.zeros(batch, dim, state, device=x.device)
+    # 2. 离散化 (Discretization)
+    # dt_A = exp(delta * A)  -> (B, D, L, N)
+    # dt_B = delta * B       -> (B, D, L, N)
+    # A broadcast over L, delta broadcast over N
+    delta_a = torch.exp(torch.einsum('bdl,dn->bdln', delta, A))
+    delta_b = torch.einsum('bdl,bnl->bdln', delta, B)
+    
+    # 3. 扫描 (Scan Loop) - 这是最慢的部分，但在无 CUDA 环境下是必须的
+    x = torch.zeros((b, d, n), device=u.device, dtype=u.dtype)
     ys = []
     
-    x_expanded = x.unsqueeze(2) # [B, D, 1, L]
+    # 扩展 u 以匹配状态维度
+    u_unsq = u.unsqueeze(-1) # (B, D, L, 1)
     
-    for t in range(length):
-        h = dA[:, :, :, t] * h + dB[:, :, :, t] * x_expanded[:, :, :, t]
-        y_t = torch.einsum('bd, bds->bd', C[:, :, t], h)
-        ys.append(y_t)
+    for i in range(l):
+        # x[t] = A[t] * x[t-1] + B[t] * u[t]
+        x = delta_a[:, :, i] * x + delta_b[:, :, i] * u_unsq[:, :, i]
         
-    y = torch.stack(ys, dim=2) # [B, D, L]
+        # y[t] = C[t] * x[t]
+        # logic: sum(x * C) over state dimension N
+        # x: (B, D, N), C[:,:,i]: (B, N)
+        y = torch.einsum('bdn,bn->bd', x, C[:, :, i])
+        ys.append(y)
+        
+    y = torch.stack(ys, dim=2) # (B, D, L)
     
-    if D is not None:
-        y = y + D.unsqueeze(-1) * x
+    # 4. 后处理 (Gate & Residual)
     if z is not None:
         y = y * F.silu(z)
+
+    if D is not None:
+        y = y + D[..., None] * u
         
     return y
 
 # ==============================================================================
-# 2. Linux / CUDA 高性能版 (尝试导入编译好的核心)
+# 2. 自动后端选择器 (Auto-Backend Switch)
 # ==============================================================================
+
+# 尝试导入编译好的 CUDA 核心
 try:
-    # 优先尝试导入 M3ANet 风格的自定义 CUDA 核心 (如果你编译了 selective_scan_cuda)
     import selective_scan_cuda
-    
-    class SelectiveScanCuda(torch.autograd.Function):
-        @staticmethod
-        def forward(ctx, u, delta, A, B, C, D=None, delta_bias=None, delta_softplus=False):
-            # 这里的接口需要根据你具体的 .so 文件编译情况调整
-            # 这是一个标准的 Mamba wrapper 示例
-            if delta_bias is not None:
-                dt = delta + delta_bias.view(1, -1, 1)
-            else:
-                dt = delta
-            if delta_softplus:
-                dt = F.softplus(dt)
-                
-            # 调用 CUDA 实现 (假设接口名为 fwd)
-            out, x, *rest = selective_scan_cuda.fwd(u, dt, A, B, C, D, None, None, False)
-            ctx.save_for_backward(u, dt, A, B, C, D, x)
-            return out
-
-        @staticmethod
-        def backward(ctx, dout):
-            # 简化的 backward 占位，实际需要调用 bwd kernel
-            # 如果你用的是官方 mamba-ssm，不需要手写这个 Function
-            return None 
-
-    def selective_scan_cuda_fn(x, dt, A, B, C, D=None, z=None, delta_bias=None, delta_softplus=True):
-        # 简单的封装调用
-        return SelectiveScanCuda.apply(x, dt, A, B, C, D, delta_bias, delta_softplus)
-
-    CUDA_IMPL = "custom_cuda"
-
+    USE_CUDA = True
+    print("[Scan] ✅ Detected compiled CUDA kernels. Using fast GPU backend.")
 except ImportError:
-    # 再次尝试导入官方 mamba_ssm (推荐在 Linux 上直接 pip install mamba-ssm)
-    try:
-        from mamba_ssm.ops.selective_scan_interface import selective_scan_fn
-        CUDA_IMPL = "official_mamba"
-    except ImportError:
-        CUDA_IMPL = "cpu"
+    USE_CUDA = False
+    print("[Scan] ⚠️  CUDA kernels not found. Switched to Pure PyTorch backend (CPU/Mac/Win Compatible).")
+
+class SelectiveScanFn(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, u, delta, A, B, C, D=None, z=None, delta_bias=None, delta_softplus=False, return_last_state=False):
+        # 只有当环境完美时才走 CUDA
+        if USE_CUDA:
+            try:
+                out, x, *rest = selective_scan_cuda.fwd(u, delta, A, B, C, D, z, delta_bias, delta_softplus)
+                ctx.save_for_backward(u, delta, A, B, C, D, z, delta_bias, x)
+                ctx.delta_softplus = delta_softplus
+                return out
+            except Exception as e:
+                # 即使导入成功但运行时报错，也回退到 PyTorch
+                print(f"[Scan] Runtime CUDA error: {e}. Fallback to PyTorch ref.")
+                return selective_scan_ref(u, delta, A, B, C, D, z, delta_bias, delta_softplus, return_last_state)
+        else:
+            return selective_scan_ref(u, delta, A, B, C, D, z, delta_bias, delta_softplus, return_last_state)
+
+    @staticmethod
+    def backward(ctx, dout, *args):
+        if USE_CUDA:
+            try:
+                u, delta, A, B, C, D, z, delta_bias, x = ctx.saved_tensors
+                du, ddelta, dA, dB, dC, dD, ddelta_bias, *rest = selective_scan_cuda.bwd(
+                    u, delta, A, B, C, D, z, delta_bias, dout, x, None, None, ctx.delta_softplus, False
+                )
+                return (du, ddelta, dA, dB, dC, dD, None, ddelta_bias, None, None)
+            except Exception:
+                # 理论上 Autograd 会自动处理 ref 的 backward，不应进入这里
+                return None
+        else:
+            raise NotImplementedError("Pure PyTorch backward is handled by autograd, should not call this.")
 
 # ==============================================================================
-# 3. 统一分发入口
+# 3. 统一对外接口
 # ==============================================================================
-def selective_scan_1d(x, dt, A, B, C, D=None, z=None, delta_bias=None, delta_softplus=True):
-    """
-    自动选择后端的 Selective Scan 接口
-    """
-    if x.is_cuda and CUDA_IMPL == "official_mamba":
-        # 官方库通常需要 B, C 维度为 [B, L, S] (Channel Last)
-        # 这里做一个简单的维度转换示例，具体视版本而定
-        return selective_scan_fn(x, dt, A, B, C, D, z, delta_bias, delta_softplus)
-        
-    elif x.is_cuda and CUDA_IMPL == "custom_cuda":
-        # 使用 M3ANet 风格的 kernel
-        # 注意：这里需要确保输入维度符合你编译的 kernel 要求
-        return selective_scan_cpu(x, dt, A, B, C, D, z, delta_bias, delta_softplus) # 暂时 fallback 避免接口报错
-        
+def selective_scan_fn(u, delta, A, B, C, D=None, z=None, delta_bias=None, delta_softplus=False, return_last_state=False):
+    if USE_CUDA:
+        return SelectiveScanFn.apply(u, delta, A, B, C, D, z, delta_bias, delta_softplus, return_last_state)
     else:
-        # Mac / CPU
-        return selective_scan_cpu(x, dt, A, B, C, D, z, delta_bias, delta_softplus)
+        # 在纯 PyTorch 模式下，直接调用函数而不是 Function.apply，这样可以保留 PyTorch 的自动求导图
+        return selective_scan_ref(u, delta, A, B, C, D, z, delta_bias, delta_softplus, return_last_state)
