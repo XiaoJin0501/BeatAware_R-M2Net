@@ -36,34 +36,72 @@ class RadarDataset(Dataset):
 
 # --- 简单的测试代码 (Test Block) ---
 if __name__ == '__main__':
-    import os
-    
-    # 假设你现在的路径结构，自动找一个文件来测试
-    # 注意：这里路径可能需要根据你实际存放 HDF5 的位置微调
-    base_path = r'data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent/train.h5'
-    
-    if os.path.exists(base_path):
-        print(f"Testing dataset with: {base_path}")
-        dataset = RadarDataset(base_path)
-        dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
-        
-        # 取一个 Batch 看看长什么样
-        radar, ecg, mask = next(iter(dataloader))
-        
-        print("\n[Data Shapes Check]")
-        print(f"Radar Batch: {radar.shape} (Expected: [4, 1, 1600])")
-        print(f"ECG Batch  : {ecg.shape}   (Expected: [4, 1, 1600])")
-        print(f"Mask Batch : {mask.shape}  (Expected: [4, 1, 1600])")
-        
-        print("\n[Value Range Check]")
-        print(f"Radar: min={radar.min():.4f}, max={radar.max():.4f}")
-        print(f"ECG  : min={ecg.min():.4f}, max={ecg.max():.4f}")
-        print(f"Mask : min={mask.min():.4f}, max={mask.max():.4f}")
-        
-        if mask.max() > 0.5:
-            print("\n✅ Mask looks good! (Contains peaks)")
-        else:
-            print("\n⚠️ Warning: Mask seems empty/flat. Check preprocessing?")
+    from pathlib import Path
+    from torch.utils.data import DataLoader
+
+    # ============================================================
+    # 1. 自动定位项目根目录
+    # 假设当前文件位于：
+    #   Radar2ECGNet/src/... 或 Radar2ECGNet/data_preprocessing/...
+    # ============================================================
+    PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+    # ============================================================
+    # 2. 构建 HDF5 数据路径（与运行位置无关）
+    # ============================================================
+    base_path = (
+        PROJECT_ROOT
+        / 'data_preprocessing'
+        / 'processed_to_h5'
+        / 'experiment_A_SubjectIndependent'
+        / 'train.h5'
+    )
+
+    # ============================================================
+    # 3. 基本路径检查
+    # ============================================================
+    if not base_path.exists():
+        raise FileNotFoundError(
+            f"[ERROR] Could not find test file:\n{base_path}\n"
+            "Please check your directory structure."
+        )
+
+    print(f"\n[INFO] Testing dataset with:\n{base_path}")
+
+    # ============================================================
+    # 4. 构建 Dataset / DataLoader
+    # ============================================================
+    dataset = RadarDataset(str(base_path))
+    dataloader = DataLoader(
+        dataset,
+        batch_size=4,
+        shuffle=True,
+        num_workers=0,   # Test 阶段建议 0，便于 debug
+        drop_last=True
+    )
+
+    # ============================================================
+    # 5. 取一个 batch 做 sanity check
+    # ============================================================
+    radar, ecg, mask = next(iter(dataloader))
+
+    print("\n================ Data Shapes Check ================")
+    print(f"Radar Batch: {radar.shape} (Expected: [4, 1, 1600])")
+    print(f"ECG Batch  : {ecg.shape}   (Expected: [4, 1, 1600])")
+    print(f"Mask Batch : {mask.shape}  (Expected: [4, 1, 1600])")
+
+    print("\n================ Value Range Check ================")
+    print(f"Radar: min={radar.min():.4f}, max={radar.max():.4f}")
+    print(f"ECG  : min={ecg.min():.4f}, max={ecg.max():.4f}")
+    print(f"Mask : min={mask.min():.4f}, max={mask.max():.4f}")
+
+    # ============================================================
+    # 6. Mask 合法性检查（对 QRS / 有效心搏非常关键）
+    # ============================================================
+    if mask.max() > 0.5:
+        print("\n✅ Mask looks good! (Contains valid peaks)")
     else:
-        print(f"Error: Could not find test file at {base_path}")
-        print("Please check your path.")
+        print("\n⚠️ Warning: Mask seems empty or flat.")
+        print("   → Please check QRS detection or preprocessing pipeline.")
+
+    print("\n[INFO] Test Block finished successfully.\n")
