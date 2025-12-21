@@ -7,12 +7,12 @@ import time
 
 # --- 引入我们搭建的基础设施 ---
 from config import Config
-from .dataset import RadarDataset
-from .models.BA_M2Net import BeatAwareRM2Net
-from .utils.losses import TotalLoss
+from dataset import RadarDataset
+from models.BA_M2Net import BeatAwareRM2Net
+from utils.losses import TotalLoss
 # logger 和 seeding 放在 utils 下 
-from .utils.logger import setup_logger
-from .utils.seeding import seed_everything
+from utils.logger import setup_logger
+from utils.seeding import seed_everything
 
 def train():
     # 1. 第一件事：固定随机种子 (保证每次跑结果一样)

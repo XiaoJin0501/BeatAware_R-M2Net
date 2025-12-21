@@ -6,11 +6,11 @@ import scipy.io as sio
 from tqdm import tqdm
 
 from config import Config
-from .dataset import RadarDataset
-from .models.BA_M2Net import BeatAwareRM2Net
+from dataset import RadarDataset
+from models.BA_M2Net import BeatAwareRM2Net
 # 假设 metrics.py 在 utils 下
-from .utils.metrics import calculate_metrics 
-from .utils.logger import setup_logger
+from utils.metrics import calculate_metrics 
+from utils.logger import setup_logger
 
 def test():
     # 初始化 Logger (单独的 test.log)
