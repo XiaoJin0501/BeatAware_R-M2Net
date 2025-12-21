@@ -10,7 +10,7 @@ class BeatAwareRM2Net(nn.Module):
     def __init__(self, in_channels=1, base_channels=32):
         super().__init__()
         
-        # 1. anchor branch 用于生成 TFiLM 条件和预测 R 波 Mask, anchor_enc
+        # 1. anchor branch 用于生成 TFiLM 条件和预测 R 波 Mask, anchor_enc (anchor_encoder)
         # 输入是 Radar (1通道), 输出也是 Mask (1通道)
         # 注意：这里不能过早 Pooling 掉时间维度，要保持分辨率
         self.anchor_enc = nn.Sequential(
@@ -55,7 +55,7 @@ class BeatAwareRM2Net(nn.Module):
         self.final = nn.Conv1d(base_channels, 1, 1)
         
     def forward(self, x, mask=None): # mask 仅用于训练时的 Loss 计算，推理时不需要
-        # A. Condition
+        # A. Condition anchor_features
         anchor_feat = self.anchor_enc(x) # [B, 32, L]
         # 1. 输出 Mask 预测 (用于 Loss)
         anchor_pred_mask = torch.sigmoid(self.anchor_head(anchor_feat)) # [B, 1, L]
