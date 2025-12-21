@@ -81,7 +81,7 @@ def train():
             
             # ✅ [修正点 1] 只调用一次模型
             # 但 forward 签名里有 mask=None，所以传进去也没错，或者写 model(radar) 也可以
-            pred_ecg, anchor_pred = model(radar)
+            pred_ecg, pred_mask = model(radar)
             
             # ✅ 修改 2: 不需要额外的 anchor_label 变量
             # dataset 返回的 'mask' 就是 Ground Truth

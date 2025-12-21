@@ -10,13 +10,12 @@ class BeatAwareRM2Net(nn.Module):
     def __init__(self, in_channels=1, base_channels=32):
         super().__init__()
         
-        # 1. Anchor Branch (特征提取)
+        # 1. anchor branch 用于生成 TFiLM 条件和预测 R 波 Mask, anchor_enc
         # 输入是 Radar (1通道), 输出也是 Mask (1通道)
         # 注意：这里不能过早 Pooling 掉时间维度，要保持分辨率
-        self.anchor_branch = nn.Sequential(
+        self.anchor_enc = nn.Sequential(
             nn.Conv1d(1, 16, 7, padding=3), nn.ReLU(),
             nn.Conv1d(16, 32, 5, padding=2), nn.ReLU(),
-            nn.AdaptiveMaxPool1d(1), nn.Flatten()
         )
         
         # ✅ 头1: 预测概率 Mask (用于计算 Anchor Loss)
