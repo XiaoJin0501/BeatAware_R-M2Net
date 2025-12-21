@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-from .scan import selective_scan_1d  # 引用上一步写的 scan.py
+from models.scan import selective_scan_1d  # 引用上一步写的 scan.py
 
 class VSSSBlock1D(nn.Module):
     """

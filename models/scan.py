@@ -80,6 +80,8 @@ class SelectiveScanFn(torch.autograd.Function):
         # 只有当环境完美时才走 CUDA
         if USE_CUDA:
             try:
+                # 注意：这里的接口参数顺序可能需要根据实际 selective_scan_cuda 的实现进行微调
+                # 这里假设它接受的参数与 Python 版一致
                 out, x, *rest = selective_scan_cuda.fwd(u, delta, A, B, C, D, z, delta_bias, delta_softplus)
                 ctx.save_for_backward(u, delta, A, B, C, D, z, delta_bias, x)
                 ctx.delta_softplus = delta_softplus
@@ -109,7 +111,11 @@ class SelectiveScanFn(torch.autograd.Function):
 # ==============================================================================
 # 3. 统一对外接口
 # ==============================================================================
-def selective_scan_fn(u, delta, A, B, C, D=None, z=None, delta_bias=None, delta_softplus=False, return_last_state=False):
+def selective_scan_1d(u, delta, A, B, C, D=None, z=None, delta_bias=None, delta_softplus=False, return_last_state=False):
+    """
+    对外调用的主函数。
+    名字改为 selective_scan_1d 以匹配 ssm.py 中的 import。
+    """
     if USE_CUDA:
         return SelectiveScanFn.apply(u, delta, A, B, C, D, z, delta_bias, delta_softplus, return_last_state)
     else:

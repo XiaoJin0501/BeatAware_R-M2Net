@@ -10,15 +10,28 @@ class BeatAwareRM2Net(nn.Module):
     def __init__(self, in_channels=1, base_channels=32):
         super().__init__()
         
-        # 1. Anchor Branch
+        # 1. Anchor Branch (特征提取)
+        # 输入是 Radar (1通道), 输出也是 Mask (1通道)
+        # 注意：这里不能过早 Pooling 掉时间维度，要保持分辨率
         self.anchor_branch = nn.Sequential(
-            nn.Conv1d(1, 16, 7, padding=3), nn.ReLU(), nn.MaxPool1d(2),
+            nn.Conv1d(1, 16, 7, padding=3), nn.ReLU(),
             nn.Conv1d(16, 32, 5, padding=2), nn.ReLU(),
             nn.AdaptiveMaxPool1d(1), nn.Flatten()
         )
-        self.base_channels = base_channels
+        
+        # ✅ 头1: 预测概率 Mask (用于计算 Anchor Loss)
+        # 输出 [B, 1, L]，每个点代表该时刻是 R 波的概率
+        self.anchor_head = nn.Conv1d(32, 1, 1)
+        
+        # ✅ 头2: 生成 TFiLM 参数 (用于驱动主干)
+        # 这里才进行 Pooling，变回 [B, 32] 向量
+        self.tfilm_adapter = nn.Sequential(
+            nn.AdaptiveMaxPool1d(1), 
+            nn.Flatten()
+        )
         self.tfilm_gen = TFiLMGenerator(32, base_channels * 4)
-
+        self.base_channels = base_channels
+        
         # 2. Encoder
         self.enc_convs = nn.ModuleList()
         self.enc_bns = nn.ModuleList()
@@ -41,14 +54,21 @@ class BeatAwareRM2Net(nn.Module):
         self.up1 = nn.ConvTranspose1d(self.bottleneck_dim, self.bottleneck_dim//2, 4, stride=2, padding=1)
         self.up2 = nn.ConvTranspose1d(self.bottleneck_dim//2, base_channels, 4, stride=2, padding=1)
         self.final = nn.Conv1d(base_channels, 1, 1)
-
-    def forward(self, x, mask):
+        
+    def forward(self, x, mask=None): # mask 仅用于训练时的 Loss 计算，推理时不需要
         # A. Condition
-        anchor = self.anchor_branch(mask)
-        gamma, beta = self.tfilm_gen(anchor)
-        gamma = gamma.view(-1, 4, self.base_channels, 1)
-        beta = beta.view(-1, 4, self.base_channels, 1)
-
+        anchor_feat = self.anchor_enc(x) # [B, 32, L]
+        # 1. 输出 Mask 预测 (用于 Loss)
+        anchor_pred_mask = torch.sigmoid(self.anchor_head(anchor_feat)) # [B, 1, L]
+        
+        # 生成 TFiLM 参数
+        anchor_vec = self.tfilm_adapter(anchor_feat) # [B, 32]
+        gamma, beta = self.tfilm_gen(anchor_vec) # [B, 4*C], [B, 4*C]
+        
+        # Reshape for multiplication: [B, 4*C] -> [B, 4, C, 1]
+        gamma = gamma.view(x.size(0), 4, self.base_channels, 1)
+        beta = beta.view(x.size(0), 4, self.base_channels, 1)
+        
         # B. Encoder
         feats = []
         for i, (conv, bn) in enumerate(zip(self.enc_convs, self.enc_bns)):
@@ -65,11 +85,21 @@ class BeatAwareRM2Net(nn.Module):
         # D. Decoder
         x_up = F.relu(self.up1(x_mid))
         x_up = F.relu(self.up2(x_up))
-        return torch.tanh(self.final(x_up))
+        
+        # 计算最终输出
+        out = torch.tanh(self.final(x_up))
+    
+    # 返回: 重建ECG, 预测Mask
+        return out, anchor_pred_mask
 
 if __name__ == "__main__":
     model = BeatAwareRM2Net()
     x = torch.randn(2, 1, 1600)
+    # 这里的 mask 参数在 forward 里其实没用到，只是为了保持接口一致性
     mask = torch.randn(2, 1, 1600)
-    y = model(x, mask)
-    print(f"✅ BA_M2Net Ready! Output Shape: {y.shape}")
+    
+    # 注意这里接收两个返回值
+    y, y_anchor = model(x, mask)
+    print(f"✅ BA_M2Net Ready!")
+    print(f"   Main Output Shape: {y.shape}")      # 应为 [2, 1, 1600]
+    print(f"   Anchor Output Shape: {y_anchor.shape}") # 应为 [2, 1]

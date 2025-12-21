@@ -8,7 +8,7 @@ class MultiResolutionSTFTLoss(nn.Module):
     用于在频域约束模型，确保 P波 和 T波 等微细结构的保真度。
     参考: Parallel WaveGAN / HiFi-GAN
     """
-    def __init__(self, fft_sizes=[1024, 2048, 512], hop_sizes=[120, 240, 50], win_lengths=[600, 1200, 240]):
+    def __init__(self, fft_sizes=[64, 128, 256], hop_sizes=[8, 16, 32], win_lengths=[32, 64, 128]):
         super().__init__()
         self.fft_sizes = fft_sizes
         self.hop_sizes = hop_sizes
@@ -46,18 +46,29 @@ class MultiResolutionSTFTLoss(nn.Module):
         return loss / len(self.fft_sizes)
 
 class TotalLoss(nn.Module):
-    def __init__(self, alpha=1.0):
+    def __init__(self, alpha=1.0, beta=0.1): # beta 是 anchor loss 的权重
         super().__init__()
         self.alpha = alpha
+        self.beta = beta
         self.l1_loss = nn.L1Loss() # Time Domain
         self.mr_stft_loss = MultiResolutionSTFTLoss() # Frequency Domain
+        # 因为 Mask 是 0/1 概率，用 BCE Loss 最合适
+        self.anchor_criterion = nn.BCELoss()
 
-    def forward(self, x_pred, x_target):
-        # 1. Time Domain Loss (MAE)
+    def forward(self, x_pred, x_target, anchor_pred=None, anchor_target=None):
+        # 1. Time Domain Loss (MAE) 主任务 Loss
         loss_time = self.l1_loss(x_pred, x_target)
-        
-        # 2. Frequency Domain Loss
+        # 2. (Multi-Resolution STFT Loss)
         loss_freq = self.mr_stft_loss(x_pred, x_target)
         
+        # 3. Anchor Loss (带安全检查)
+        if anchor_pred is not None and anchor_target is not None:
+            loss_anchor = self.anchor_criterion(anchor_pred, anchor_target)
+        else:
+            # 如果没有提供标签，Loss 为 0 (不影响训练)
+            loss_anchor = torch.tensor(0.0, device=x_pred.device)
+        
         # Total Loss
-        return loss_time + self.alpha * loss_freq, loss_time, loss_freq
+        total = loss_time + self.alpha * loss_freq + self.beta * loss_anchor
+        # 返回 4 个值，匹配 train.py 的解包数量
+        return total, loss_time, loss_freq, loss_anchor

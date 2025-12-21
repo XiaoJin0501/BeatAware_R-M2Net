@@ -65,10 +65,15 @@ class Config:
     # =========================================================================
     ALPHA = 1.0              # STFT Loss 的权重 (L_total = L1 + alpha * L_STFT)
     
-    # 多分辨率 STFT 的参数配置 (参考 HiFi-GAN)
-    FFT_SIZES = [1024, 2048, 512]
-    HOP_SIZES = [120, 240, 50]
-    WIN_LENGTHS = [600, 1200, 240]
+    # 多分辨率 STFT 的参数配置 200Hz ECG 的参数
+    # 逻辑：
+    # 小窗口: 捕捉瞬时变化 (QRS波), 约 40-60ms
+    # 中窗口: 捕捉波形形态 (P/T波), 约 150-300ms
+    # 大窗口: 捕捉整体节律 (RR间期), 约 600ms-1s
+    FFT_SIZES = [64, 128, 256]  # FFT 点数 (2的幂次)
+    HOP_SIZES = [32, 64, 128]   # 窗长 (分别对应 0.16s, 0.32s, 0.64s)
+    WIN_LENGTHS = [8, 16, 32]   # 步长 (通常为窗长的 1/4 或 1/2)
+    PATIENCE = 10 # 早停法耐心值 (如果验证集 Loss 连续 10 个 Epoch 不下降，则停止)
 
     @classmethod
     def makedirs(cls):
