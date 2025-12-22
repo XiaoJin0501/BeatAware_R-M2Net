@@ -101,6 +101,9 @@ def train():
         # --- Training Phase ---
         model.train()
         train_loss_avg = 0
+        train_L1_avg = 0
+        train_STFT_avg = 0
+        train_Anchor_avg = 0
         
         # 使用 tqdm 显示进度条，不刷屏 log 文件
         loop = tqdm(train_loader, desc=f"Epoch {epoch+1}/{Config.EPOCHS} [Train]")
@@ -128,6 +131,9 @@ def train():
             optimizer.step()
             
             train_loss_avg += loss.item()
+            train_L1_avg += l_time.item()
+            train_STFT_avg += l_freq.item()
+            train_Anchor_avg += l_anchor.item()
             
             # 进度条显示实时 Loss
             loop.set_postfix(loss=loss.item(), L1=l_time.item(), STFT=l_freq.item(), Anchor=l_anchor.item())
@@ -143,7 +149,11 @@ def train():
                 if anchor_target is not None:
                     writer.add_scalar('Loss/Train_Anchor', l_anchor.item(), current_step)
             
+        # ✅ [修改 3] 计算所有 Loss 的平均值
         train_loss_avg /= len(train_loader)
+        train_L1_avg /= len(train_loader)
+        train_STFT_avg /= len(train_loader)
+        train_Anchor_avg /= len(train_loader)
         
         # --- Validation Phase ---
         model.eval()
@@ -163,7 +173,12 @@ def train():
         writer.add_scalar('Loss/Val_Total', val_loss_avg, epoch)
         
         # --- Logging & Saving ---
-        logger.info(f"Epoch {epoch+1:03d} | Train Loss: {train_loss_avg:.6f} | Val Loss: {val_loss_avg:.6f}")
+        logger.info(
+            f"Epoch {epoch+1:03d} | "
+            f"Train Total: {train_loss_avg:.4f} "
+            f"(L1: {train_L1_avg:.4f}, STFT: {train_STFT_avg:.4f}, Anchor: {train_Anchor_avg:.4f}) | "
+            f"Val Loss: {val_loss_avg:.4f}"
+        )
         
         # 🔍 [新增功能] 保存 Best 和 Last Checkpoint
         # =====================================================================
