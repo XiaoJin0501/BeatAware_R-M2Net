@@ -1,0 +1,4 @@
+[2025-12-22 14:59:31] INFO: 🚀 Starting Test for Experiment: Exp_A_SubjectIndependent_Baseline
+[2025-12-22 14:59:31] INFO: Reading test data from: /home/qhh2237/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent/test.h5
+[2025-12-22 14:59:31] INFO: ✅ Loading weights from: /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-22 14:59:31] INFO: ⏳ Running Inference...

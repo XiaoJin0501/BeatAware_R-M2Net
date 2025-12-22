@@ -19,3 +19,95 @@
 [2025-12-21 15:54:32] INFO: 🌟 Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
 [2025-12-21 15:58:06] INFO: Epoch 005 | Train Loss: 5.518906 | Val Loss: 5.255407
 [2025-12-21 15:58:06] INFO: 🌟 Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-21 19:34:21] INFO: 🚀 Experiment Started: Exp_A_SubjectIndependent_Baseline
+[2025-12-21 19:34:21] INFO: 📂 Data Directory: /home/qhh2237/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2025-12-21 19:34:21] INFO: 💻 Device: cuda
+[2025-12-21 19:34:21] INFO: ⏳ Loading datasets...
+[2025-12-21 19:34:21] INFO: Data loaded. Train samples: 3079, Test samples: 498
+[2025-12-21 19:34:22] INFO: Model initialized. Alpha for STFT Loss: 1.0
+[2025-12-21 19:37:56] INFO: Epoch 001 | Train Loss: 5.375881 | Val Loss: 4.510633
+[2025-12-21 19:37:56] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-21 19:41:29] INFO: Epoch 002 | Train Loss: 4.783556 | Val Loss: 4.214727
+[2025-12-21 19:41:29] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-21 19:45:04] INFO: Epoch 003 | Train Loss: 4.484031 | Val Loss: 4.071566
+[2025-12-21 19:45:04] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-21 19:48:49] INFO: 🚀 Experiment Started: Exp_A_SubjectIndependent_Baseline
+[2025-12-21 19:48:49] INFO: 📂 Data Directory: /home/qhh2237/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2025-12-21 19:48:49] INFO: 💻 Device: cuda
+[2025-12-21 19:48:49] INFO: ⏳ Loading datasets...
+[2025-12-21 19:48:49] INFO: Data loaded. Train samples: 3079, Test samples: 498
+[2025-12-21 19:48:50] INFO: Model initialized. Alpha for STFT Loss: 1.0
+[2025-12-21 19:52:23] INFO: Epoch 001 | Train Loss: 5.352666 | Val Loss: 4.442801
+[2025-12-21 19:52:23] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-21 19:55:57] INFO: Epoch 002 | Train Loss: 4.766482 | Val Loss: 4.126350
+[2025-12-21 19:55:57] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-21 19:59:31] INFO: Epoch 003 | Train Loss: 4.453296 | Val Loss: 4.144465
+[2025-12-21 19:59:31] INFO: No improvement for 1/10 epochs.
+[2025-12-21 20:03:04] INFO: Epoch 004 | Train Loss: 4.265934 | Val Loss: 3.972654
+[2025-12-21 20:03:04] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-21 20:06:38] INFO: Epoch 005 | Train Loss: 4.157172 | Val Loss: 3.836326
+[2025-12-21 20:06:38] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-21 20:10:12] INFO: Epoch 006 | Train Loss: 4.066307 | Val Loss: 3.768937
+[2025-12-21 20:10:12] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-21 20:13:46] INFO: Epoch 007 | Train Loss: 3.994805 | Val Loss: 4.009375
+[2025-12-21 20:13:46] INFO: No improvement for 1/10 epochs.
+[2025-12-21 20:17:19] INFO: Epoch 008 | Train Loss: 3.960585 | Val Loss: 3.804238
+[2025-12-21 20:17:19] INFO: No improvement for 2/10 epochs.
+[2025-12-21 20:20:53] INFO: Epoch 009 | Train Loss: 3.920804 | Val Loss: 3.918458
+[2025-12-21 20:20:53] INFO: No improvement for 3/10 epochs.
+[2025-12-21 20:24:27] INFO: Epoch 010 | Train Loss: 3.832394 | Val Loss: 3.805193
+[2025-12-21 20:24:27] INFO: No improvement for 4/10 epochs.
+[2025-12-21 20:28:00] INFO: Epoch 011 | Train Loss: 3.753630 | Val Loss: 3.755845
+[2025-12-21 20:28:00] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-21 20:31:34] INFO: Epoch 012 | Train Loss: 3.761647 | Val Loss: 3.894411
+[2025-12-21 20:31:34] INFO: No improvement for 1/10 epochs.
+[2025-12-21 20:35:08] INFO: Epoch 013 | Train Loss: 3.748702 | Val Loss: 4.011093
+[2025-12-21 20:35:08] INFO: No improvement for 2/10 epochs.
+[2025-12-21 20:38:41] INFO: Epoch 014 | Train Loss: 3.772823 | Val Loss: 3.715055
+[2025-12-21 20:38:41] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-21 20:42:15] INFO: Epoch 015 | Train Loss: 3.657910 | Val Loss: 3.529532
+[2025-12-21 20:42:15] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-21 20:45:49] INFO: Epoch 016 | Train Loss: 3.666328 | Val Loss: 3.646419
+[2025-12-21 20:45:49] INFO: No improvement for 1/10 epochs.
+[2025-12-21 20:49:23] INFO: Epoch 017 | Train Loss: 3.677803 | Val Loss: 3.676283
+[2025-12-21 20:49:23] INFO: No improvement for 2/10 epochs.
+[2025-12-21 20:52:56] INFO: Epoch 018 | Train Loss: 3.597149 | Val Loss: 3.647344
+[2025-12-21 20:52:56] INFO: No improvement for 3/10 epochs.
+[2025-12-21 20:56:30] INFO: Epoch 019 | Train Loss: 3.599199 | Val Loss: 3.653974
+[2025-12-21 20:56:30] INFO: No improvement for 4/10 epochs.
+[2025-12-21 21:00:04] INFO: Epoch 020 | Train Loss: 3.553927 | Val Loss: 3.502062
+[2025-12-21 21:00:04] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-21 21:03:37] INFO: Epoch 021 | Train Loss: 3.542250 | Val Loss: 3.668938
+[2025-12-21 21:03:37] INFO: No improvement for 1/10 epochs.
+[2025-12-21 21:07:11] INFO: Epoch 022 | Train Loss: 3.545697 | Val Loss: 3.494606
+[2025-12-21 21:07:11] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-21 21:10:45] INFO: Epoch 023 | Train Loss: 3.453742 | Val Loss: 3.477692
+[2025-12-21 21:10:45] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-21 21:14:18] INFO: Epoch 024 | Train Loss: 3.469589 | Val Loss: 3.673722
+[2025-12-21 21:14:18] INFO: No improvement for 1/10 epochs.
+[2025-12-21 21:17:52] INFO: Epoch 025 | Train Loss: 3.492436 | Val Loss: 3.620524
+[2025-12-21 21:17:52] INFO: No improvement for 2/10 epochs.
+[2025-12-21 21:21:26] INFO: Epoch 026 | Train Loss: 3.446539 | Val Loss: 3.355832
+[2025-12-21 21:21:26] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth
+[2025-12-21 21:24:59] INFO: Epoch 027 | Train Loss: 3.486781 | Val Loss: 3.512120
+[2025-12-21 21:24:59] INFO: No improvement for 1/10 epochs.
+[2025-12-21 21:28:33] INFO: Epoch 028 | Train Loss: 3.395900 | Val Loss: 3.452507
+[2025-12-21 21:28:33] INFO: No improvement for 2/10 epochs.
+[2025-12-21 21:32:07] INFO: Epoch 029 | Train Loss: 3.402277 | Val Loss: 3.543826
+[2025-12-21 21:32:07] INFO: No improvement for 3/10 epochs.
+[2025-12-21 21:35:40] INFO: Epoch 030 | Train Loss: 3.402168 | Val Loss: 3.569504
+[2025-12-21 21:35:40] INFO: No improvement for 4/10 epochs.
+[2025-12-21 21:39:14] INFO: Epoch 031 | Train Loss: 3.382091 | Val Loss: 3.483470
+[2025-12-21 21:39:14] INFO: No improvement for 5/10 epochs.
+[2025-12-21 21:42:47] INFO: Epoch 032 | Train Loss: 3.347237 | Val Loss: 3.432286
+[2025-12-21 21:42:47] INFO: No improvement for 6/10 epochs.
+[2025-12-21 21:46:21] INFO: Epoch 033 | Train Loss: 3.318114 | Val Loss: 3.670093
+[2025-12-21 21:46:21] INFO: No improvement for 7/10 epochs.
+[2025-12-21 21:49:55] INFO: Epoch 034 | Train Loss: 3.336906 | Val Loss: 3.516891
+[2025-12-21 21:49:55] INFO: No improvement for 8/10 epochs.
+[2025-12-21 21:53:29] INFO: Epoch 035 | Train Loss: 3.350298 | Val Loss: 3.420626
+[2025-12-21 21:53:29] INFO: No improvement for 9/10 epochs.
+[2025-12-21 21:57:02] INFO: Epoch 036 | Train Loss: 3.330817 | Val Loss: 3.477807
+[2025-12-21 21:57:02] INFO: No improvement for 10/10 epochs.
+[2025-12-21 21:57:02] INFO: Early stopping triggered after 10 epochs with no improvement.
+[2025-12-21 21:57:02] INFO: Training Finished Successfully!
