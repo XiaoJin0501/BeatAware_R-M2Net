@@ -111,3 +111,23 @@
 [2025-12-21 21:57:02] INFO: No improvement for 10/10 epochs.
 [2025-12-21 21:57:02] INFO: Early stopping triggered after 10 epochs with no improvement.
 [2025-12-21 21:57:02] INFO: Training Finished Successfully!
+[2025-12-22 15:36:25] INFO: 🚀 Experiment Started: Exp_A_SubjectIndependent_Baseline
+[2025-12-22 15:36:25] INFO: 📂 Data Directory: /home/qhh2237/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2025-12-22 15:36:25] INFO: 💻 Device: cuda
+[2025-12-22 15:36:25] INFO: ⏳ Loading datasets...
+[2025-12-22 15:36:25] INFO: Data loaded. Train samples: 3079, Test samples: 498
+[2025-12-22 15:36:26] INFO: Model initialized. Alpha for STFT Loss: 1.0
+[2025-12-22 15:36:59] INFO: 🚀 Experiment Started: Exp_A_SubjectIndependent_Baseline
+[2025-12-22 15:36:59] INFO: 📂 Data Directory: /home/qhh2237/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2025-12-22 15:36:59] INFO: 💻 Device: cuda
+[2025-12-22 15:36:59] INFO: ⏳ Loading datasets...
+[2025-12-22 15:36:59] INFO: Data loaded. Train samples: 3079, Test samples: 498
+[2025-12-22 15:37:00] INFO: Model initialized. Alpha for STFT Loss: 1.0
+[2025-12-22 15:59:23] INFO: 🚀 Experiment Started: Exp_A_SubjectIndependent_Baseline
+[2025-12-22 15:59:23] INFO: 📂 Data Directory: /home/qhh2237/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2025-12-22 15:59:23] INFO: 💻 Device: cpu
+[2025-12-22 15:59:23] INFO: ⏳ Loading datasets...
+[2025-12-22 15:59:23] INFO: Data loaded. Train samples: 3079, Test samples: 498
+[2025-12-22 15:59:23] INFO: Model initialized. Alpha for STFT Loss: 1.0
+[2025-12-22 16:18:43] INFO: Epoch 001 | Train Loss: 3.901909 | Val Loss: 3.523221
+[2025-12-22 16:18:43] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_best.pth

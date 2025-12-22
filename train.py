@@ -17,9 +17,8 @@ from utils.logger import setup_logger
 from utils.seeding import seed_everything
 
 def train():
-    # 1. 固定随机种子 (保证每次跑结果一样)
+    # 1. 固定随机种子 
     seed_everything(Config.SEED)
-    
     # 2. 初始化日志系统 (同时输出到屏幕和文件) 日志会保存在 experiments/Exp_Name/logs/train.log
     logger = setup_logger(Config.LOG_DIR, name="train")
     writer = SummaryWriter(log_dir=os.path.join(Config.LOG_DIR, 'tensorboard'))
@@ -59,13 +58,46 @@ def train():
     optimizer = optim.AdamW(model.parameters(), lr=Config.LEARNING_RATE, weight_decay=Config.WEIGHT_DECAY)
     
     logger.info(f"Model initialized. Alpha for STFT Loss: {Config.ALPHA}")
+    
+    # 🔍  断点续训逻辑 (Resume Logic)
+    # =========================================================================
+    start_epoch = 0
+    best_val_loss = float('inf')
+    epochs_no_improve = 0
+    
+    # 定义断点路径: last.pth 用于记录最新的训练状态
+    last_ckpt_path = os.path.join(Config.CKPT_DIR, f"{Config.EXP_NAME}_last.pth")
+    best_ckpt_path = os.path.join(Config.CKPT_DIR, f"{Config.EXP_NAME}_best.pth")
+
+    # 检查是否存在上次中断的断点
+    if os.path.exists(last_ckpt_path):
+        logger.info(f"Found checkpoint at {last_ckpt_path}. Resuming training...")
+        checkpoint = torch.load(last_ckpt_path, map_location=Config.DEVICE)
+        
+        # 1. 加载模型权重
+        model.load_state_dict(checkpoint['model_state_dict'])
+        # 2. 加载优化器状态
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        # 3. 恢复 Epoch 计数
+        start_epoch = checkpoint['epoch'] + 1
+        # 4. 恢复 Loss 记录
+        best_val_loss = checkpoint.get('best_val_loss', float('inf'))
+        epochs_no_improve = checkpoint.get('epochs_no_improve', 0)
+        
+        logger.info(f"Resumed from Epoch {start_epoch}. Best Val Loss so far: {best_val_loss:.6f}")
+    else:
+        logger.info("No checkpoint found. Starting fresh training.")
+
+    # =========================================================================
 
     # 5. 训练主循环
     best_val_loss = float('inf')
+    
+    
     # 新增：初始化计数器
     epochs_no_improve = 0
     
-    for epoch in range(Config.EPOCHS):
+    for epoch in range(start_epoch, Config.EPOCHS):
         # --- Training Phase ---
         model.train()
         train_loss_avg = 0
@@ -100,13 +132,14 @@ def train():
             # 进度条显示实时 Loss
             loop.set_postfix(loss=loss.item(), L1=l_time.item(), STFT=l_freq.item(), Anchor=l_anchor.item())
             
-            # 记录 Training Loss (每 10 个 batch 记一次，减少开销)
+            # TensorBoard Logging every 10 steps
+            # 使用 epoch * len(train_loader) + i 作为全局 step
             if i % 10 == 0:
                 current_step = epoch * len(train_loader) + i
                 writer.add_scalar('Loss/Train_Total', loss.item(), current_step)
                 writer.add_scalar('Loss/Train_L1', l_time.item(), current_step)
                 writer.add_scalar('Loss/Train_STFT', l_freq.item(), current_step)
-                # 只有当 anchor_loss 有效时才记录
+                
                 if anchor_target is not None:
                     writer.add_scalar('Loss/Train_Anchor', l_anchor.item(), current_step)
             
@@ -132,18 +165,34 @@ def train():
         # --- Logging & Saving ---
         logger.info(f"Epoch {epoch+1:03d} | Train Loss: {train_loss_avg:.6f} | Val Loss: {val_loss_avg:.6f}")
         
-        # 保存最佳模型+早停逻辑
+        # 🔍 [新增功能] 保存 Best 和 Last Checkpoint
+        # =====================================================================
+        
+        # 1. 始终保存当前 Epoch 为 "last.pth" (覆盖式)
+        # 这样无论何时断电，下次都可以从这里恢复
+        last_checkpoint = {
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': val_loss_avg,
+            'best_val_loss': best_val_loss,      # 记住当前最好的成绩
+            'epochs_no_improve': epochs_no_improve # 记住早停计数器
+        }
+        torch.save(last_checkpoint, last_ckpt_path)
+        logger.info(f"Last checkpoint saved to {last_ckpt_path}")
+        
+        # # 2. 如果是历史最佳，额外保存一份 "best.pth"
         if val_loss_avg < best_val_loss:
             best_val_loss = val_loss_avg
             epochs_no_improve = 0 # 重置计数器
-            save_path = os.path.join(Config.CKPT_DIR, f"{Config.EXP_NAME}_best.pth")
-            torch.save({
+            best_checkpoint = {
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
-                'loss': best_val_loss,
-            }, save_path)
-            logger.info(f"Best model saved to {save_path}")
+                'loss': val_loss_avg
+            }
+            torch.save(best_checkpoint, best_ckpt_path)
+            logger.info(f"Best model saved to {best_ckpt_path}")
         else:
             epochs_no_improve += 1 # 计数器加 1
             logger.info(f"No improvement for {epochs_no_improve}/{Config.PATIENCE} epochs.")

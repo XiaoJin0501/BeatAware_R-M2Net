@@ -15,6 +15,7 @@ class Config:
     SEED = 42
     
     # 自动检测设备 (优先 CUDA > MPS (Mac) > CPU)
+    # DEVICE = "cpu"
     DEVICE = (
         "cuda" if torch.cuda.is_available() 
         else "mps" if torch.backends.mps.is_available() 
@@ -51,7 +52,8 @@ class Config:
     # =========================================================================
     # 4. 训练超参数 (Training Hyperparameters)
     # =========================================================================
-    BATCH_SIZE = 32          # 显存不够可调小 (e.g., 16)
+    BATCH_SIZE = 32 # 显存不够可调小 (e.g., 16)
+    # BATCH_SIZE = 2
     EPOCHS = 100
     LEARNING_RATE = 1e-4
     WEIGHT_DECAY = 1e-2      # AdamW 的权重衰减
