@@ -19,7 +19,7 @@ class BeatAwareRM2Net(nn.Module):
         )
         
         # ✅ 头1: 预测概率 Mask (用于计算 Anchor Loss)
-        # 输出 [B, 1, L]，每个点代表该时刻是 R 波的概率
+        # 输出 [B, 1, L]，经过 Sigmoid 归一化到 [0, 1]
         self.anchor_head = nn.Conv1d(32, 1, 1)
         
         # ✅ 头2: 生成 TFiLM 参数 (用于驱动主干)
@@ -55,9 +55,9 @@ class BeatAwareRM2Net(nn.Module):
         self.final = nn.Conv1d(base_channels, 1, 1)
         
     def forward(self, x, mask=None): # mask 仅用于训练时的 Loss 计算，推理时不需要
-        # A. Condition anchor_features
-        anchor_feat = self.anchor_enc(x) # [B, 32, L]
-        # 1. 输出 Mask 预测 (用于 Loss)
+        # The input for the Anchor Branch must be Radar(x) [B, 1, L].
+        anchor_feat = self.anchor_enc(x)  # [B, 32, L]
+        # 1. 输出 Mask 预测 (用于 Loss)(使用 Sigmoid 归一化到 0-1)
         anchor_pred_mask = torch.sigmoid(self.anchor_head(anchor_feat)) # [B, 1, L]
         
         # 生成 TFiLM 参数
@@ -68,7 +68,7 @@ class BeatAwareRM2Net(nn.Module):
         gamma = gamma.view(x.size(0), 4, self.base_channels, 1)
         beta = beta.view(x.size(0), 4, self.base_channels, 1)
         
-        # B. Encoder
+        # B. Encoder (应用 TFiLM)
         feats = []
         for i, (conv, bn) in enumerate(zip(self.enc_convs, self.enc_bns)):
             f = conv(x)
@@ -85,8 +85,8 @@ class BeatAwareRM2Net(nn.Module):
         x_up = F.relu(self.up1(x_mid))
         x_up = F.relu(self.up2(x_up))
         
-        # 计算最终输出
-        out = torch.tanh(self.final(x_up))
+        # The activation function was changed to Sigmoid, which matches the data range [0, 1].
+        out = torch.sigmoid(self.final(x_up))
     
     # 返回: 重建ECG, 预测Mask
         return out, anchor_pred_mask
