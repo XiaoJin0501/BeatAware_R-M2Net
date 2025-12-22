@@ -76,10 +76,6 @@ def test():
                     save_dir=result_dir, 
                     sample_idx=0
                 )
-            
-            # 计算指标
-            metrics = calculate_metrics(pred_ecg, ecg)
-            
             # ✅ 记录指标 (现在不会报错了)
             for k, v in metrics.items():
                 all_metrics[k].append(v)
