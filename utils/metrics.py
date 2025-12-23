@@ -36,10 +36,8 @@ def calculate_metrics(pred, target):
         if np.std(p) < 1e-6 or np.std(t) < 1e-6:
             pearsons.append(0)
         else:
-            corr = np.corrcoef(p, t)[0, 1]
-            pearsons.append(corr)
-    
-    avg_pearson = np.mean(pearsons)
+            pearsons.append(np.corrcoef(p, t)[0, 1])
+
     
     # 返回字典 (Key首字母大写以匹配 test.py 的 defaultdict)
-    return {"MAE": mae, "RMSE": rmse, "Pearson": avg_pearson}
+    return {"MAE": mae, "RMSE": rmse, "Pearson": np.mean(pearsons)}

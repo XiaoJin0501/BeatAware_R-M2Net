@@ -72,7 +72,10 @@ class BeatAwareRM2Net(nn.Module):
         feats = []
         for i, (conv, bn) in enumerate(zip(self.enc_convs, self.enc_bns)):
             f = conv(x)
+            # 1: 先过 BN 再做 TFiLM, 这样调制的偏移量不会被 BN 抹掉
+            f = bn(f)
             f = f * (1.0 + gamma[:, i]) + beta[:, i] # TFiLM
+            # 2: 激活 ReLU
             feats.append(F.relu(bn(f)))
         
         x_enc = torch.cat(feats, dim=1)

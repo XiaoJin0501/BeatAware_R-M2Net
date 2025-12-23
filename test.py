@@ -64,7 +64,10 @@ def test():
             ecg = ecg.to(device)
             
             # 解包模型的两个返回值
-            pred_ecg, pred_mask = model(radar)
+            pred_ecg, _ = model(radar)  # 忽略 anchor 分支的输出
+            
+            # 计算指标
+            metrics = calculate_metrics(pred_ecg, ecg)
             
             # 可视化 (只画前 num_plots 张)
             if i < num_plots:
@@ -76,6 +79,7 @@ def test():
                     save_dir=result_dir, 
                     sample_idx=0
                 )
+                
             # ✅ 记录指标 (现在不会报错了)
             for k, v in metrics.items():
                 all_metrics[k].append(v)
