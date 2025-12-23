@@ -34,6 +34,9 @@
 
 模型代码路径：`models/BA_M2Net.py`
 
+![Model Overview](Figures/Framework.png)
+![Module Architecture](Figures/Conformer_and_VSSS_Block.png)
+
 ### 3.1 全局张量流 (Global Tensor Flow)
 * **输入 (Input)**: $\mathbf{X} \in \mathbb{R}^{B \times 1 \times 1600}$ (Batch, Channel=1, Length=1600)。
 * **输出 (Output)**: $\mathbf{Y} \in \mathbb{R}^{B \times 1 \times 1600}$ (归一化 ECG 信号)。
