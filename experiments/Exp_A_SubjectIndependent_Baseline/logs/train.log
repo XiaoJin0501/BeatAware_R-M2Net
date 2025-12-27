@@ -1,0 +1,21 @@
+[2025-12-27 18:31:45] INFO: 🚀 Experiment Started: Exp_A_SubjectIndependent_Baseline
+[2025-12-27 18:31:45] INFO: 📂 Data Directory: /home/qhh2237/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2025-12-27 18:31:45] INFO: 💻 Device: cuda
+[2025-12-27 18:31:45] INFO: ⏳ Loading datasets...
+[2025-12-27 18:31:45] INFO: Data loaded. Train samples: 4501, Test samples: 613
+[2025-12-27 18:31:46] INFO: Model initialized. Alpha for STFT Loss: 1.0
+[2025-12-27 18:31:46] INFO: No checkpoint found. Starting fresh training.
+[2025-12-27 18:32:29] INFO: 🚀 Experiment Started: Exp_A_SubjectIndependent_Baseline
+[2025-12-27 18:32:29] INFO: 📂 Data Directory: /home/qhh2237/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2025-12-27 18:32:29] INFO: 💻 Device: cuda
+[2025-12-27 18:32:29] INFO: ⏳ Loading datasets...
+[2025-12-27 18:32:29] INFO: Data loaded. Train samples: 4501, Test samples: 613
+[2025-12-27 18:32:30] INFO: Model initialized. Alpha for STFT Loss: 1.0
+[2025-12-27 18:32:30] INFO: No checkpoint found. Starting fresh training.
+[2025-12-27 18:33:29] INFO: 🚀 Experiment Started: Exp_A_SubjectIndependent_Baseline
+[2025-12-27 18:33:29] INFO: 📂 Data Directory: /home/qhh2237/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2025-12-27 18:33:29] INFO: 💻 Device: cuda
+[2025-12-27 18:33:29] INFO: ⏳ Loading datasets...
+[2025-12-27 18:33:29] INFO: Data loaded. Train samples: 4501, Test samples: 613
+[2025-12-27 18:33:30] INFO: Model initialized. Alpha for STFT Loss: 1.0
+[2025-12-27 18:33:30] INFO: No checkpoint found. Starting fresh training.
