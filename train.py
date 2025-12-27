@@ -54,7 +54,7 @@ def train():
     ).to(Config.DEVICE)
     
     # 初始化 Loss (beta=0.1 是 anchor loss 的权重)
-    criterion = TotalLoss(alpha=Config.ALPHA, beta=0.1).to(Config.DEVICE)
+    criterion = TotalLoss(alpha=Config.ALPHA, beta=1.0).to(Config.DEVICE)
     optimizer = optim.AdamW(model.parameters(), lr=Config.LEARNING_RATE, weight_decay=Config.WEIGHT_DECAY)
     
     logger.info(f"Model initialized. Alpha for STFT Loss: {Config.ALPHA}")

@@ -65,3 +65,11 @@
 [2025-12-22 17:48:55] INFO: Epoch 020 | Train Loss: 3.262630 | Val Loss: 3.523282
 [2025-12-22 17:48:55] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_last.pth
 [2025-12-22 17:48:55] INFO: No improvement for 1/10 epochs.
+[2025-12-27 17:55:36] INFO: 🚀 Experiment Started: Exp_A_SubjectIndependent_Baseline
+[2025-12-27 17:55:36] INFO: 📂 Data Directory: /home/qhh2237/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2025-12-27 17:55:36] INFO: 💻 Device: cuda
+[2025-12-27 17:55:36] INFO: ⏳ Loading datasets...
+[2025-12-27 17:55:36] INFO: Data loaded. Train samples: 4501, Test samples: 613
+[2025-12-27 17:55:37] INFO: Model initialized. Alpha for STFT Loss: 1.0
+[2025-12-27 17:55:37] INFO: Found checkpoint at /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_A_SubjectIndependent_Baseline/checkpoints/Exp_A_SubjectIndependent_Baseline_last.pth. Resuming training...
+[2025-12-27 17:55:37] INFO: Resumed from Epoch 20. Best Val Loss so far: 3.378029

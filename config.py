@@ -53,8 +53,7 @@ class Config:
     # 4. 训练超参数 (Training Hyperparameters)
     # =========================================================================
     BATCH_SIZE = 32 # 显存不够可调小 (e.g., 16)
-    # BATCH_SIZE = 2
-    EPOCHS = 100
+    EPOCHS = 150
     LEARNING_RATE = 1e-4
     WEIGHT_DECAY = 1e-2      # AdamW 的权重衰减
     
