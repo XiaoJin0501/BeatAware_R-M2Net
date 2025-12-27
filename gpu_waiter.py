@@ -16,8 +16,8 @@ FREE_THRESHOLD = 14500
 # 4. 轮询间隔 (秒)
 CHECK_INTERVAL = 60 
 
-# 5. 等待超时时间 (秒)：12小时
-MAX_WAIT_TIME = 12 * 3600 
+# 5. # 或者最推荐的设置：设为 None，表示只要 GPU 不空闲，就一直等下去
+MAX_WAIT_TIME = None
 # ============================================
 
 def get_free_memory(gpu_id=0):
