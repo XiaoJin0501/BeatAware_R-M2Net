@@ -17,8 +17,10 @@ class Config:
     FS_ECG_RAW = 2000
     FS_TARGET = 200
     
-    RADAR_BANDPASS = [0.1, 16] 
-    ECG_BANDPASS = [1.0, 16]   
+    # 雷达带通：必须滤除呼吸(0.1-0.5Hz)！
+    RADAR_BANDPASS = [0.8, 30.0] 
+    # 标准 ECG 监测通常使用 0.5 - 40 Hz
+    ECG_BANDPASS = [0.5, 40.0]   
     
     # ------------------ 数据集动态划分策略 ------------------
     MIN_VALID_SEGMENTS_PER_SUBJECT = 10 

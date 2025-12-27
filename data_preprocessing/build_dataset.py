@@ -10,6 +10,61 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from config import Config 
 from src import radar_dsp, ecg_dsp, quality_control, utils
+from scipy import signal
+
+# --- 新增：对齐辅助函数 ---
+def align_signals(radar, ecg, fs):
+    """
+    计算雷达和ECG的互相关，找到最佳滞后并对齐。
+    注意：为了计算准确，我们临时对信号进行强滤波(0.8-3Hz)来提取心跳包络进行匹配，
+    但返回的是根据该滞后对齐后的原始输入信号。
+    """
+    # 1. 临时强滤波 (只取心跳频段 0.8-3.0Hz，排除呼吸干扰)
+    b, a = signal.butter(4, [0.8 / (0.5 * fs), 3.0 / (0.5 * fs)], btype='band')
+    r_heart = signal.filtfilt(b, a, radar)
+    e_heart = signal.filtfilt(b, a, ecg) # ECG本身就很干净，但这能保持相位一致性
+
+    # 2. 归一化 (Z-Score)
+    r_heart = (r_heart - np.mean(r_heart)) / (np.std(r_heart) + 1e-6)
+    e_heart = (e_heart - np.mean(e_heart)) / (np.std(e_heart) + 1e-6)
+
+    # 3. 互相关计算
+    # 限制最大搜索范围为 +/- 1.0 秒 (即 fs 个点)，避免匹配到错误的周期
+    max_lag = int(1.0 * fs)
+    correlation = signal.correlate(r_heart, e_heart, mode='full')
+    lags = signal.correlation_lags(len(r_heart), len(e_heart), mode='full')
+
+    # 只看中心窗口内的相关性
+    mask = (lags >= -max_lag) & (lags <= max_lag)
+    valid_lags = lags[mask]
+    valid_corr = correlation[mask]
+
+    # 4. 找到最佳偏移
+    best_lag = valid_lags[np.argmax(valid_corr)]
+    
+    # 5. 执行对齐裁切
+    # best_lag > 0: 雷达信号滞后 (Radar is delayed) -> 雷达需要往左移(丢掉开头)
+    # best_lag < 0: ECG 滞后 -> ECG 需要往左移
+    if best_lag > 0:
+        radar_aligned = radar[best_lag:]
+        ecg_aligned = ecg[:len(radar_aligned)]
+    elif best_lag < 0:
+        ecg_aligned = ecg[abs(best_lag):]
+        radar_aligned = radar[:len(ecg_aligned)]
+    else:
+        radar_aligned = radar
+        ecg_aligned = ecg
+        
+    # 再次确保长度一致
+    min_len = min(len(radar_aligned), len(ecg_aligned))
+    return radar_aligned[:min_len], ecg_aligned[:min_len]
+
+def z_score_normalize(data):
+    """[新增] Z-Score 归一化 (用于 Radar 输入)"""
+    std_val = np.std(data)
+    if std_val < 1e-6: # 防止除零 (死线)
+        return np.zeros_like(data)
+    return (data - np.mean(data)) / std_val
 
 def process_subject(file_path):
     """处理单个受试者，返回该受试者所有的合格片段列表"""
@@ -35,9 +90,18 @@ def process_subject(file_path):
         ecg, Config.FS_ECG_RAW, Config.FS_TARGET, Config.ECG_BANDPASS
     )
     
+    # 2. 长度对齐 (先截断到相同长度)
     min_len = min(len(radar_clean), len(ecg_clean))
     radar_clean = radar_clean[:min_len]
     ecg_clean = ecg_clean[:min_len]
+    
+    # ========== 加入相位对齐 ==========
+    # 雷达的心跳分量通常滞后于ECG的R波，如果不强制对齐，模型学不到东西
+    try:
+        radar_clean, ecg_clean = align_signals(radar_clean, ecg_clean, Config.FS_TARGET)
+    except Exception as e:
+        print(f"Skipping {os.path.basename(file_path)}: Alignment error {e}")
+        return []
     
     # --- Anchor 生成 ---
     mask, r_peaks = ecg_dsp.generate_anchor_mask(ecg_clean, Config.FS_TARGET, Config.ANCHOR_SIGMA)
@@ -48,18 +112,20 @@ def process_subject(file_path):
     
     segments = []
     
-    for start in range(0, min_len - win_pts, stride_pts):
+    for start in range(0, len(radar_clean) - win_pts, stride_pts):
         end = start + win_pts
         
-        # SQI 检查 (只检查这一小段内的 R 峰)
+        # SQI 检查 (基于对齐后的 R peaks) 
         seg_r_peaks = [p - start for p in r_peaks if start <= p < end]
         if not quality_control.check_sqi(seg_r_peaks, win_pts, Config.FS_TARGET, 
                                        Config.SQI_HR_MIN, Config.SQI_HR_MAX):
             continue # 丢弃坏片段
             
-        # 归一化
-        seg_radar = utils.min_max_normalize(radar_clean[start:end])
+        # Radar (输入): 使用 Z-Score (分布在 -3 到 3 之间，利于 CNN 收敛)
+        seg_radar = z_score_normalize(radar_clean[start:end])
+        # ECG (标签): 使用 Min-Max 归一化 (0-1 之间) (配合模型最后的 Sigmoid)
         seg_ecg = utils.min_max_normalize(ecg_clean[start:end])
+        # Mask: 已经是 [0, 1]
         seg_mask = mask[start:end]
         
         segments.append({
