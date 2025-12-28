@@ -57,12 +57,18 @@ def process_radar_signal(radar_i, radar_q, fs_raw, fs_target, bandpass_freqs):
     else:
         phase_resampled = resample_poly(phase, up, down)
         
-    # 4. 带通滤波 (提取胸部机械位移)
+    # 4. 带通滤波 (提取胸部机械位移)(0.8 - 30.0 Hz)
     # 注意: 差分(Diff) 实际上是一个高通滤波器，这里直接用带通代替，保留位移波形
     nyquist = 0.5 * fs_target
-    low = bandpass_freqs[0] / nyquist
-    high = bandpass_freqs[1] / nyquist
-    b, a = butter(4, [low, high], btype='band')
+    b, a = butter(4, [bandpass_freqs[0] / nyquist, bandpass_freqs[1] / nyquist], btype='band')
     displacement = filtfilt(b, a, phase_resampled)
     
-    return displacement
+    # 5. 【核心修改】一阶差分提取速度信号 (Enhance Heartbeat Jumps)
+    # 物理意义：将胸壁运动由“位移”转为“速度”，显著增强心跳引起的脉冲响应
+    velocity = np.diff(displacement, append=displacement[-1])
+    
+    # 6. 【核心修改】Z-Score 标准化
+    # 必须保证输入特征均值为 0，标准差为 1，以适配神经网络
+    radar_input = (velocity - np.mean(velocity)) / (np.std(velocity) + 1e-8)
+    
+    return radar_input
