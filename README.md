@@ -84,7 +84,16 @@
 
 ## 4. 数据流水线与预处理 (Data Pipeline & Preprocessing)
 
-本项目设计了一套具有生理一致性保障的预处理流程，旨在消除异构模态间的域差异并提取关键生理特征。Train samples: 4501, Test samples: 613
+本项目设计了一套具有生理一致性保障的预处理流程，旨在消除异构模态间的域差异并提取关键生理特征。
+[Experiment A Split]: Total Subjects: 30; Valid Subjects: 21; Rejected Subjects (Low Quality): [3, 6, 10, 13, 16, 19, 22, 24, 26]
+  Train Subjects (17): [1, 2, 4, 5, 7, 8, 9, 11, 12, 14, 15, 17, 18, 20, 21, 23, 25]; Test Subjects  (4): [27, 28, 29, 30]
+  train samples: 4488 samples; test samples: 605 samples
+
+[Experiment B Split]
+  Total Segments: 5093
+  Train Segments: 4074
+  Test Segments : 1019
+Train sample: 4074; test samples: 1019
 
 ### 4.0 核心创新：Ground Truth 构建 (`src/ecg_dsp.py`)
 为了监督 Anchor Branch，构建了 `generate_anchor_mask` 函数：

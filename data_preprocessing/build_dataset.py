@@ -148,6 +148,14 @@ def process_subject(file_path):
     for start in range(0, len(radar_clean) - win_pts, stride_pts):
         end = start + win_pts
         
+        seg_radar = z_score_normalize(radar_aligned[start:end])
+        
+        # 新增：剔除离群值片段 (峰值过大) # 检查是否存在绝对值超过 15 的极端伪影 (比如Sample 0)
+        if np.max(np.abs(seg_radar)) > 15:
+            # print(f"  [QC] Dropping segment due to motion artifact (peak: {np.max(np.abs(seg_radar)):.2f})")
+            continue
+        
+        
         # SQI 检查 (基于对齐后的 R peaks) 
         seg_r_peaks = [p - start for p in r_peaks if start <= p < end]
         if not quality_control.check_sqi(seg_r_peaks, win_pts, Config.FS_TARGET, Config.SQI_HR_MIN, Config.SQI_HR_MAX):
