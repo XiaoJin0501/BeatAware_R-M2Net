@@ -67,7 +67,7 @@ class Config:
     # =========================================================================
     # 5. Loss 参数 (Loss Function Params)
     # =========================================================================
-    ALPHA = 1.0              # STFT Loss 的权重 (L_total = L1 + alpha * L_STFT)
+    ALPHA = 0.01              # STFT Loss 的权重 (L_total = L1 + alpha * L_STFT)
     
     # 多分辨率 STFT 的参数配置 200Hz ECG 的参数
     # 逻辑：
