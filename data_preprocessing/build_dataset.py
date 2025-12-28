@@ -66,7 +66,7 @@ def align_signals_robust(radar, ecg, fs):
         
     # 再次确保长度一致
     min_len = min(len(radar_aligned), len(ecg_aligned))
-    return radar_aligned[:min_len], ecg_aligned[:min_len]
+    return radar_aligned[:min_len], ecg_aligned[:min_len], best_lag
 
 def z_score_normalize(data):
     """[新增] Z-Score 归一化 (用于 Radar 输入)"""
