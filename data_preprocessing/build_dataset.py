@@ -13,7 +13,7 @@ from src import radar_dsp, ecg_dsp, quality_control, utils
 from scipy import signal
 
 # --- 新增：对齐辅助函数 ---
-def align_signals(radar, ecg, fs):
+def align_signals_robust(radar, ecg, fs):
     """
     计算雷达和ECG的互相关，找到最佳滞后并对齐。
     注意：为了计算准确，我们临时对信号进行强滤波(0.8-3Hz)来提取心跳包络进行匹配，
@@ -87,6 +87,7 @@ def min_max_normalize_strict(data):
 
 def process_subject(file_path):
     """处理单个受试者，返回该受试者所有的合格片段列表"""
+    fname = os.path.basename(file_path) # 先定义 fname
     data = utils.load_mat_file(file_path)
     if data is None: return []
     
@@ -114,10 +115,13 @@ def process_subject(file_path):
     try:
         radar_aligned, ecg_aligned, best_lag = align_signals_robust(radar_clean, ecg_clean, Config.FS_TARGET)
         
-        # [学术严谨性] 过滤掉对齐偏移过大的脏数据 (阈值: 100点/0.5秒)
-        if abs(best_lag) > 100:
+    # 【修改点】将阈值从 100 放大到 200 (即 1.0秒)，适配您数据中 660ms 的偏移
+        if abs(best_lag) > 200: 
+            print(f"  [Debug] {fname}: Rejected by Lag ({best_lag} pts)")
             return []
-    except: return []
+    except Exception as e:
+        print(f"  [Debug] {fname}: Alignment crash - {e}")
+        return []
     
     # # 2. 长度对齐 (先截断到相同长度)
     # min_len = min(len(radar_clean), len(ecg_clean))
