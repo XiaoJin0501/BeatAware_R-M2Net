@@ -10,34 +10,50 @@ def calculate_metrics(pred, target):
     Output:
         dict: {MAE, RMSE, Pearson}
     """
-    # 1. 转换为 Numpy
-    pred = pred.detach().cpu().numpy()
-    target = target.detach().cpu().numpy()
+    # 1. 转换为 Numpy并展平为 1D 向量
+    pred = pred.detach().cpu().numpy().reshape(pred.shape[0], -1)
+    target = target.detach().cpu().numpy().reshape(target.shape[0], -1)
     
-    # 2. 形状调整: [B, 1, L] -> [B, L]
-    # ⚠️ 关键修改: 使用 reshape 而不是 squeeze，确保 Batch=1 时维度不丢失
-    if pred.ndim == 3:
-        pred = pred.reshape(pred.shape[0], -1)
-        target = target.reshape(target.shape[0], -1)
+    batch_size = pred.shape[0]
+    batch_mae = []
+    batch_rmse = []
+    batch_pcc = []
     
-    # 此时 pred 和 target 的形状必定是 [Batch, Length]
-    # 即使 Batch=1，也是 [1, 1600]，zip 会正确迭代 1 次，拿到完整的 (1600,) 数组
-    
+    # 2. 逐样本循环计算，确保指标反映的是每个片段的重构质量
+    for i in range(batch_size):
+        curr_p = pred[i]
+        curr_t = target[i]
+        
     # 3. MAE (L1)
-    mae = np.mean(np.abs(pred - target))
+    batch_mae.append(np.mean(np.abs(curr_p - curr_t)))
     
     # 4. RMSE (L2)
-    rmse = np.sqrt(np.mean((pred - target) ** 2))
+    batch_rmse.append(np.sqrt(np.mean((curr_p - curr_t) ** 2)))
     
-    # 5. Pearson Correlation (逐样本计算后取平均)
-    pearsons = []
-    for p, t in zip(pred, target):
-        # p, t 现在是形状为 (L,) 的完整波形
-        if np.std(p) < 1e-6 or np.std(t) < 1e-6:
-            pearsons.append(0)
-        else:
-            pearsons.append(np.corrcoef(p, t)[0, 1])
-
+    # 5. 计算 Pearson 相关系数 (核心修正点)
+    # 使用 np.corrcoef 得到相关矩阵，取 [0, 1] 元素
+    # 注意：如果信号是平线（标准差为0），corrcoef 会返回 NaN
     
-    # 返回字典 (Key首字母大写以匹配 test.py 的 defaultdict)
-    return {"MAE": mae, "RMSE": rmse, "Pearson": np.mean(pearsons)}
+    std_p = np.std(curr_p)
+    std_t = np.std(curr_t)
+    if std_p < 1e-6 or std_t < 1e-6:
+            batch_pcc.append(0.0)
+    else:
+            # np.corrcoef 返回 2x2 矩阵，取第 0 行第 1 列
+            pcc = np.corrcoef(curr_p, curr_t)[0, 1]
+            batch_pcc.append(pcc)
+    
+    
+    
+    
+    if np.std(pred) < 1e-6 or np.std(target) < 1e-6:
+        pcc = 0.0
+    else:
+        pcc = np.corrcoef(pred, target)[0, 1]
+    
+    # 3. 返回 Batch 平均值
+    return {
+        'MAE': np.mean(batch_mae),
+        'RMSE': np.mean(batch_rmse),
+        'Pearson': np.mean(batch_pcc)
+    }

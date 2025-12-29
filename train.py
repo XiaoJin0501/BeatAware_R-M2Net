@@ -3,6 +3,7 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+import argparse
 import time
 # 引入 TensorBoard
 from torch.utils.tensorboard import SummaryWriter 
@@ -17,6 +18,24 @@ from utils.logger import setup_logger
 from utils.seeding import seed_everything
 
 def train():
+    # --- [新增] 命令行参数解析：解决您“如何管理不同系数实验”的疑问 ---
+    parser = argparse.ArgumentParser(description="Train BeatAware R-M2Net")
+    parser.add_argument('--alpha', type=float, default=Config.ALPHA, help='STFT loss weight')
+    parser.add_argument('--beta', type=float, default=Config.BETA, help='Anchor loss weight')
+    parser.add_argument('--gamma', type=float, default=Config.GAMMA) # 新增命令行参数
+    parser.add_argument('--exp_tag', type=str, default="Default", help='Tag for this experiment')
+    args = parser.parse_args()
+
+    # 动态更新 Config 参数和路径
+    # 例如：Exp_Alpha0.5_Beta1.0_Default
+    new_name = f"Exp_a{args.alpha}_b{args.beta}_g{args.gamma}_{args.exp_tag}"
+    Config.ALPHA = args.alpha
+    Config.BETA = args.beta
+    Config.GAMMA = args.gamma  # 更新 gamma 参数
+    Config.update_paths(new_name)
+    Config.makedirs()
+    # =========================================================================
+    
     # 1. 固定随机种子 
     seed_everything(Config.SEED)
     # 2. 初始化日志系统 (同时输出到屏幕和文件) 日志会保存在 experiments/Exp_Name/logs/train.log
@@ -24,6 +43,7 @@ def train():
     writer = SummaryWriter(log_dir=os.path.join(Config.LOG_DIR, 'tensorboard'))
     
     logger.info(f"🚀 Experiment Started: {Config.EXP_NAME}")
+    logger.info(f"📊 Hyperparams: Alpha={Config.ALPHA}, Beta={Config.BETA}")
     logger.info(f"📂 Data Directory: {Config.DATA_DIR}")
     logger.info(f"💻 Device: {Config.DEVICE}")
 
@@ -48,16 +68,14 @@ def train():
     logger.info(f"Data loaded. Train samples: {len(train_set)}, Test samples: {len(test_set)}")
 
     # 4. 模型与 Loss 构建
-    model = BeatAwareRM2Net(
-        in_channels=Config.IN_CHANNELS, 
-        base_channels=Config.BASE_CHANNELS
-    ).to(Config.DEVICE)
+    model = BeatAwareRM2Net(in_channels=Config.IN_CHANNELS, base_channels=Config.BASE_CHANNELS).to(Config.DEVICE)
+    logger.info("⏳ Initializing model and optimizer...")
     
-    # 初始化 Loss (beta=0.1 是 anchor loss 的权重)
-    criterion = TotalLoss(alpha=Config.ALPHA, beta=1.0).to(Config.DEVICE)
+    # 初始化 Loss (包含 STFT Loss 和 Anchor Loss)
+    criterion = TotalLoss(alpha=Config.ALPHA, beta=Config.BETA, gamma=Config.GAMMA).to(Config.DEVICE)
     optimizer = optim.AdamW(model.parameters(), lr=Config.LEARNING_RATE, weight_decay=Config.WEIGHT_DECAY)
     
-    logger.info(f"Model initialized. Alpha for STFT Loss: {Config.ALPHA}")
+    logger.info(f"Model initialized with {sum(p.numel() for p in model.parameters() if p.requires_grad)} trainable parameters.")
     
     # 🔍  断点续训逻辑 (Resume Logic)
     # =========================================================================
@@ -92,8 +110,6 @@ def train():
 
     # 5. 训练主循环
     best_val_loss = float('inf')
-    
-    
     # 新增：初始化计数器
     epochs_no_improve = 0
     
@@ -111,7 +127,6 @@ def train():
         # 加上 enumerate，这样才能拿到 step (i) 用于画连续曲线
         for i, (radar, ecg, mask) in enumerate(loop):
             radar, ecg, mask = radar.to(Config.DEVICE), ecg.to(Config.DEVICE), mask.to(Config.DEVICE)
-            
             optimizer.zero_grad()
             
             # ✅ [修正点 1] 只调用一次模型
@@ -122,9 +137,9 @@ def train():
             # dataset 返回的 'mask' 就是 Ground Truth
             anchor_target = mask.to(Config.DEVICE)
 
-            # Loss Calculation
+            # Loss Calculation 用 Config 注入的权重计算 Loss
             # ✅ 修改 3: 传入 4 个参数，接收 4 个返回值
-            loss, l_time, l_freq, l_anchor = criterion(pred_ecg, ecg, pred_mask, anchor_target)
+            loss, l_time, l_freq, l_anchor, l_smooth= criterion(pred_ecg, ecg, pred_mask, anchor_target)
             
             # Backward
             loss.backward()
@@ -136,7 +151,8 @@ def train():
             train_Anchor_avg += l_anchor.item()
             
             # 进度条显示实时 Loss
-            loop.set_postfix(loss=loss.item(), L1=l_time.item(), STFT=l_freq.item(), Anchor=l_anchor.item())
+            loop.set_postfix(loss=loss.item(), L1=l_time.item(), STFT=l_freq.item(), Anchor=l_anchor.item(), Smooth=l_smooth.item())
+            writer.add_scalar('Loss/Train_Smooth', l_smooth.item(), current_step)
             
             # TensorBoard Logging every 10 steps
             # 使用 epoch * len(train_loader) + i 作为全局 step
@@ -145,10 +161,8 @@ def train():
                 writer.add_scalar('Loss/Train_Total', loss.item(), current_step)
                 writer.add_scalar('Loss/Train_L1', l_time.item(), current_step)
                 writer.add_scalar('Loss/Train_STFT', l_freq.item(), current_step)
-                
-                if anchor_target is not None:
-                    writer.add_scalar('Loss/Train_Anchor', l_anchor.item(), current_step)
-            
+                writer.add_scalar('Loss/Train_Anchor', l_anchor.item(), current_step)
+
         # ✅ [修改 3] 计算所有 Loss 的平均值
         train_loss_avg /= len(train_loader)
         train_L1_avg /= len(train_loader)

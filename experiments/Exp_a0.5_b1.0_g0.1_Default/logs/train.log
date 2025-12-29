@@ -1,0 +1,9 @@
+[2025-12-29 17:51:40] INFO: 🚀 Experiment Started: Exp_a0.5_b1.0_g0.1_Default
+[2025-12-29 17:51:40] INFO: 📊 Hyperparams: Alpha=0.5, Beta=1.0
+[2025-12-29 17:51:40] INFO: 📂 Data Directory: /home/qhh2237/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2025-12-29 17:51:40] INFO: 💻 Device: cuda
+[2025-12-29 17:51:40] INFO: ⏳ Loading datasets...
+[2025-12-29 17:51:40] INFO: Data loaded. Train samples: 4488, Test samples: 605
+[2025-12-29 17:51:40] INFO: ⏳ Initializing model and optimizer...
+[2025-12-29 17:51:40] INFO: Model initialized with 403202 trainable parameters.
+[2025-12-29 17:51:40] INFO: No checkpoint found. Starting fresh training.

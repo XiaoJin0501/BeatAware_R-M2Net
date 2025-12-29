@@ -37,10 +37,14 @@ class Config:
     # 输出目录结构
     OUTPUT_DIR = os.path.join(ROOT_DIR, "experiments", EXP_NAME)
     
-    # 自动生成的子目录
-    CKPT_DIR = os.path.join(OUTPUT_DIR, "checkpoints")   # 存模型权重
-    LOG_DIR = os.path.join(OUTPUT_DIR, "logs")           # 存日志文件
-    RESULT_DIR = os.path.join(OUTPUT_DIR, "results")     # 存测试图表和 .mat
+    # 路径初始化函数
+    @classmethod
+    def update_paths(cls, new_exp_name):
+        cls.EXP_NAME = new_exp_name
+        cls.OUTPUT_DIR = os.path.join(cls.ROOT_DIR, "experiments", cls.EXP_NAME)
+        cls.CKPT_DIR = os.path.join(cls.OUTPUT_DIR, "checkpoints")  # 存模型权重
+        cls.LOG_DIR = os.path.join(cls.OUTPUT_DIR, "logs")          # 存日志文件
+        cls.RESULT_DIR = os.path.join(cls.OUTPUT_DIR, "results")    # 存测试图表和 .mat 文件
     
     # =========================================================================
     # 3. 数据与模型参数 (Data & Model Params)
@@ -67,8 +71,9 @@ class Config:
     # =========================================================================
     # 5. Loss 参数 (Loss Function Params)
     # =========================================================================
-    ALPHA = 0.01              # STFT Loss 的权重 (L_total = L1 + alpha * L_STFT)
-    
+    ALPHA = 0.5              # STFT Loss 的权重 (L_total = L1 + alpha * L_STFT + beta * L_anchor)
+    BETA = 1.0    # Anchor Loss 权重，用于 R 峰定位
+    GAMMA = 0.1  # Smooth Loss (TV Loss) 权重，用于波形平滑
     # 多分辨率 STFT 的参数配置 200Hz ECG 的参数
     # 逻辑：
     # 小窗口: 捕捉瞬时变化 (QRS波), 约 40-60ms
@@ -77,7 +82,7 @@ class Config:
     FFT_SIZES = [64, 128, 256]  # FFT 点数 (2的幂次)
     HOP_SIZES = [32, 64, 128]   # 窗长 (分别对应 0.16s, 0.32s, 0.64s)
     WIN_LENGTHS = [8, 16, 32]   # 步长 (通常为窗长的 1/4 或 1/2)
-    PATIENCE = 10 # 早停法耐心值 (如果验证集 Loss 连续 10 个 Epoch 不下降，则停止)
+    PATIENCE = 30 # 早停法耐心值 (如果验证集 Loss 连续 10 个 Epoch 不下降，则停止)
 
     @classmethod
     def makedirs(cls):
@@ -87,5 +92,5 @@ class Config:
         os.makedirs(cls.RESULT_DIR, exist_ok=True)
         print(f"📁 Created experiment directories at: {cls.OUTPUT_DIR}")
 
-# 导入 Config 时自动创建目录
-Config.makedirs()
+# 默认初始化一次路径
+Config.update_paths(Config.EXP_NAME)

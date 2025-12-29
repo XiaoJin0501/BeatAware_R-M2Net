@@ -46,29 +46,40 @@ class MultiResolutionSTFTLoss(nn.Module):
         return loss / len(self.fft_sizes)
 
 class TotalLoss(nn.Module):
-    def __init__(self, alpha=1.0, beta=0.1): # beta 是 anchor loss 的权重
+    def __init__(self, alpha=0.5, beta=1.0, gamma=0.1): 
+        """
+        alpha: STFT Loss 权重 (建议 0.5)
+        beta: Anchor Loss 权重 (建议 1.0)
+        gamma: Smooth Loss (TV Loss) 权重 (建议 0.1)
+        """
         super().__init__()
         self.alpha = alpha
         self.beta = beta
+        self.gamma = gamma
         self.l1_loss = nn.L1Loss() # Time Domain
         self.mr_stft_loss = MultiResolutionSTFTLoss() # Frequency Domain
         # 因为 Mask 是 0/1 概率，用 BCE Loss 最合适
         self.anchor_criterion = nn.BCELoss()
 
     def forward(self, x_pred, x_target, anchor_pred=None, anchor_target=None):
-        # 1. Time Domain Loss (MAE) 主任务 Loss
+        # 1. Time Domain Loss (MAE) 主任务 Loss 定位 R 峰
         loss_time = self.l1_loss(x_pred, x_target)
-        # 2. (Multi-Resolution STFT Loss)
+        # 2. (Multi-Resolution STFT Loss) 修饰波形细节
         loss_freq = self.mr_stft_loss(x_pred, x_target)
         
-        # 3. Anchor Loss (带安全检查)
+        # 3. Anchor Loss (带安全检查) 强化 R 峰检测
         if anchor_pred is not None and anchor_target is not None:
             loss_anchor = self.anchor_criterion(anchor_pred, anchor_target)
         else:
             # 如果没有提供标签，Loss 为 0 (不影响训练)
             loss_anchor = torch.tensor(0.0, device=x_pred.device)
         
-        # Total Loss
-        total = loss_time + self.alpha * loss_freq + self.beta * loss_anchor
-        # 返回 4 个值，匹配 train.py 的解包数量
-        return total, loss_time, loss_freq, loss_anchor
+        # 4. Smooth Loss (Total Variation Loss) - 消除锯齿，提升 Pearson
+        # 计算相邻点之间的差异：x_pred 形状为 [B, 1, L]
+        loss_smooth = torch.mean(torch.abs(x_pred[:, :, 1:] - x_pred[:, :, :-1]))
+        
+        # Total Loss 组合
+        total = loss_time + self.alpha * loss_freq + self.beta * loss_anchor + self.gamma * loss_smooth
+        
+        # 注意：为了不破坏 train.py 的解包逻辑，我们将 loss_smooth 暂时合并输出或修改 train.py
+        return total, loss_time, loss_freq, loss_anchor, loss_smooth

@@ -16,6 +16,20 @@ from utils.seeding import seed_everything
 from tools.plotting import plot_reconstruction 
 
 def test():
+    
+    # --- [新增] 动态参数解析 ---
+    parser = argparse.ArgumentParser(description="Test BeatAware R-M2Net")
+    parser.add_argument('--alpha', type=float, default=0.5, help='STFT loss weight used in training')
+    parser.add_argument('--beta', type=float, default=1.0, help='Anchor loss weight used in training')
+    parser.add_argument('--gamma', type=float, default=0.1, help='Smooth loss weight used in training')
+    parser.add_argument('--exp_tag', type=str, default="Default", help='Tag used for this experiment')
+    args = parser.parse_args()
+    
+    # 根据参数动态更新 Config 中的实验名称和路径
+    # 必须与 train.py 中的命名规则完全一致
+    new_exp_name = f"Exp_a{args.alpha}_b{args.beta}_g{args.gamma}_{args.exp_tag}"
+    Config.update_paths(new_exp_name) # 调用 config.py 中的方法更新所有路径
+    # --------------------------
     # 1. 设置环境
     seed_everything(Config.SEED)
     device = Config.DEVICE
@@ -79,6 +93,12 @@ def test():
                     save_dir=result_dir, 
                     sample_idx=0
                 )
+                
+            # 为了防止文件名覆盖，手动重命名刚才生成的图片（或者确认 plotting.py 是否处理了文件名）
+            old_name = os.path.join(result_dir, "epoch_999_sample_0.png")
+            new_name = os.path.join(result_dir, f"test_sample_{i}.png")
+            if os.path.exists(old_name):
+                os.rename(old_name, new_name)
                 
             # ✅ 记录指标 (现在不会报错了)
             for k, v in metrics.items():
