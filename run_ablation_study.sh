@@ -9,11 +9,9 @@ set -e
 # 定义消融实验组
 experiments=(
     "0.0 0.0 0.0 Baseline_L1_Only"
-    "0.0 1.0 0.0 L1_plus_Anchor"
-    "0.5 1.0 0.0 L1_Anchor_STFT"
+    "0.0 1.0 0.1 L1_plus_Anchor"
     "0.5 1.0 0.1 Full_Proposed_Balanced"
-    "0.8 1.0 0.1 High_Alpha_Morphology"   # 🚀 新增：探索形态极限
-    "0.5 1.0 0.3 High_Gamma_Smoothing"    # 🚀 新增：探索平滑度极限
+    "0.8 1.0 0.1 High_Alpha_Morphology"   # 探索形态极限
     
 )
 

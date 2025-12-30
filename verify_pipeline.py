@@ -26,10 +26,10 @@ def verify_pipeline():
         # 只取前 2 个样本进行快速测试
         mini_dataset = Subset(full_dataset, range(2))
         loader = DataLoader(mini_dataset, batch_size=2)
-        radar, ecg, mask = next(iter(loader))
-        print(f"✅ 数据加载成功! Radar shape: {radar.shape}, ECG shape: {ecg.shape}")
+        radar, ecg, mask, subject_id = next(iter(loader))
+        print(f"✅ 数据解包成功！当前样本来自受试者 ID: {subject_id[0].item()}")
     except Exception as e:
-        print(f"❌ 数据加载失败: {e}")
+        print("❌ 报错：解包数量不匹配，请检查 verify_pipeline.py 是否也补上了 subject_id。")
         return
 
     # 3. 模型初始化与前向传播检查

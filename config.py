@@ -82,7 +82,7 @@ class Config:
     FFT_SIZES = [64, 128, 256]  # FFT 点数 (2的幂次)
     HOP_SIZES = [32, 64, 128]   # 窗长 (分别对应 0.16s, 0.32s, 0.64s)
     WIN_LENGTHS = [8, 16, 32]   # 步长 (通常为窗长的 1/4 或 1/2)
-    PATIENCE = 30 # 早停法耐心值 (如果验证集 Loss 连续 10 个 Epoch 不下降，则停止)
+    PATIENCE = 20 # 早停法耐心值 (如果验证集 Loss 连续 10 个 Epoch 不下降，则停止)
 
     @classmethod
     def makedirs(cls):

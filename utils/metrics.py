@@ -1,15 +1,10 @@
 import torch
 import numpy as np
+import neurokit2 as nk
+from scipy.stats import pearsonr
 
 def calculate_metrics(pred, target):
-    """
-    计算 ECG 重建的三大核心指标
-    Input:
-        pred: [B, 1, L]
-        target: [B, 1, L]
-    Output:
-        dict: {MAE, RMSE, Pearson}
-    """
+    """计算基础波形相似度指标"""
     # 1. 转换为 Numpy并展平为 1D 向量
     pred = pred.detach().cpu().numpy().reshape(pred.shape[0], -1)
     target = target.detach().cpu().numpy().reshape(target.shape[0], -1)
@@ -24,10 +19,8 @@ def calculate_metrics(pred, target):
         curr_p = pred[i]
         curr_t = target[i]
         
-    # 3. MAE (L1)
+    # 3. MAE & RMSE
     batch_mae.append(np.mean(np.abs(curr_p - curr_t)))
-    
-    # 4. RMSE (L2)
     batch_rmse.append(np.sqrt(np.mean((curr_p - curr_t) ** 2)))
     
     # 5. 计算 Pearson 相关系数 (核心修正点)
@@ -57,3 +50,34 @@ def calculate_metrics(pred, target):
         'RMSE': np.mean(batch_rmse),
         'Pearson': np.mean(batch_pcc)
     }
+
+def extract_clinical_features_nk(signal, fs=200):
+    """
+    [核心新增] 使用 NeuroKit2 提取临床生理指标
+    """
+    try:
+        # 1. 寻峰 (R-peaks)
+        _, rpeaks = nk.ecg_peaks(signal, sampling_rate=fs)
+        
+        # 2. 波形解析 (Delineation): 检测 P, Q, S, T 特征点
+        # method="peak" 比较稳健，适用于重构信号
+        _, waves = nk.ecg_delineate(signal, rpeaks, sampling_rate=fs, method="peak")
+        
+        # 3. 计算基础心率指标
+        r_indices = rpeaks['ECG_R_Peaks']
+        if len(r_indices) < 2:
+            return {"HR": np.nan, "RR": np.nan, "QRS": np.nan, "QT": np.nan}
+        
+        rr_intervals = np.diff(r_indices) * (1000.0 / fs) # 转为 ms
+        rr_mean = np.nanmean(rr_intervals)
+        hr = 60000.0 / rr_mean
+        
+        # 4. 计算细致间期 (QRS & QT)
+        # QRS: S波偏移 - Q波起始; QT: T波偏移 - Q波起始
+        # 注意: 如果信号质量差，nk检测不到某些波形，这里会返回 NaN
+        qrs = np.nanmean(waves['ECG_S_Offsets'] - waves['ECG_Q_Onsets']) * (1000.0 / fs)
+        qt = np.nanmean(waves['ECG_T_Offsets'] - waves['ECG_Q_Onsets']) * (1000.0 / fs)
+        
+        return {"HR": hr, "RR": rr_mean, "QRS": qrs, "QT": qt}
+    except Exception:
+        return {"HR": np.nan, "RR": np.nan, "QRS": np.nan, "QT": np.nan}

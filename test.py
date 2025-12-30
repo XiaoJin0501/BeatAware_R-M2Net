@@ -1,5 +1,6 @@
 import os
 import torch
+import h5py
 import numpy as np
 import pandas as pd
 import argparse  # <--- [核心修复] 补上这一行
@@ -12,12 +13,11 @@ from collections import defaultdict
 from config import Config
 from dataset import RadarDataset
 from models.BA_M2Net import BeatAwareRM2Net
-from utils.metrics import calculate_metrics
+from utils.metrics import calculate_metrics, extract_clinical_features_nk
 from utils.seeding import seed_everything
 from tools.plotting import plot_reconstruction 
 
 def test():
-    
     # --- [新增] 动态参数解析 ---
     parser = argparse.ArgumentParser(description="Test BeatAware R-M2Net")
     parser.add_argument('--alpha', type=float, default=0.5, help='STFT loss weight used in training')
@@ -66,60 +66,84 @@ def test():
     checkpoint = torch.load(ckpt_path, map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
-
-    # 5. 推理循环
-    print("⏳ Running Inference...")
     
-    # 只画前 10 张图看看效果
-    num_plots = 10 
+    # --- 数据导出准备 ---
+    clinical_records = []  # 用于导出 A. test_comprehensive.csv
+    vis_data_pool = []     # 用于导出 B. visualization_data.npz
+    
+    print(f"🚀 Starting Comprehensive Inference for: {Config.EXP_NAME}")
     
     with torch.no_grad():
-        for i, (radar, ecg, mask) in enumerate(tqdm(test_loader)):
-            radar = radar.to(device)
-            ecg = ecg.to(device)
+        for i, (radar, ecg, mask, subject_id) in enumerate(tqdm(test_loader)):
+            radar, ecg, mask = radar.to(device), ecg.to(device), mask.to(device)
             
-            # 解包模型的两个返回值
-            pred_ecg, _ = model(radar)  # 忽略 anchor 分支的输出
+            # [核心：捕获 pred_mask 以证明 Anchor 机制]
+            pred_ecg, pred_mask = model(radar)
             
-            # 计算指标
-            metrics = calculate_metrics(pred_ecg, ecg)
-            
-            # 可视化 (只画前 num_plots 张)
-            if i < num_plots:
-                plot_reconstruction(
-                    radar=radar, 
-                    ecg_true=ecg, 
-                    ecg_pred=pred_ecg, 
-                    epoch=999,      # 测试阶段标记为 999
-                    save_dir=result_dir, 
-                    sample_idx=0
-                )
-                
-            # 为了防止文件名覆盖，手动重命名刚才生成的图片（或者确认 plotting.py 是否处理了文件名）
-            old_name = os.path.join(result_dir, "epoch_999_sample_0.png")
-            new_name = os.path.join(result_dir, f"test_sample_{i}.png")
-            if os.path.exists(old_name):
-                os.rename(old_name, new_name)
-                
-            # ✅ 记录指标 (现在不会报错了)
-            for k, v in metrics.items():
-                all_metrics[k].append(v)
+            # 转为 Numpy 方便指标计算和保存
+            p_np = pred_ecg.cpu().numpy().squeeze()
+            t_np = ecg.cpu().numpy().squeeze()
+            pm_np = pred_mask.cpu().numpy().squeeze()
+            tm_np = mask.cpu().numpy().squeeze()
+            r_np = radar.cpu().numpy().squeeze()
 
-    # 6. 统计并保存结果
-    print("\n📊 Test Results Summary:")
-    final_results = {}
-    for k, v in all_metrics.items():
-        mean_val = np.mean(v)
-        std_val = np.std(v)
-        # 打印平均值 ± 标准差
-        print(f"   {k}: {mean_val:.4f} ± {std_val:.4f}")
+            # A. 计算波形和临床指标
+            wave_m = calculate_metrics(pred_ecg, ecg)
+            p_feat = extract_clinical_features_nk(p_np, fs=200)
+            t_feat = extract_clinical_features_nk(t_np, fs=200)
+
+            # B. 记录受试者级详细数据
+            record = {
+                "Subject_ID": int(subject_id.item()), 
+                "PCC": wave_m['Pearson'],
+                "MAE": wave_m['MAE'],
+                "RMSE": wave_m['RMSE'],
+                "HR_True": t_feat['HR'], "HR_Pred": p_feat['HR'],
+                "RR_True": t_feat['RR'], "RR_Pred": p_feat['RR'],
+                "QRS_Err": abs(t_feat['QRS'] - p_feat['QRS']),
+                "QT_Err": abs(t_feat['QT'] - p_feat['QT'])
+            }
+            clinical_records.append(record)
+
+            # C. 缓存原始矩阵数据 (用于绘图)
+            vis_data_pool.append({
+                "radar": r_np,
+                "ecg_true": t_np, "ecg_pred": p_np,
+                "mask_true": tm_np, "mask_pred": pm_np,
+                "pcc": wave_m['Pearson']
+            })
+
+    # --- 后处理与导出 ---
     
-    # 保存详细结果到 CSV
-    df = pd.DataFrame(all_metrics)
-    csv_path = os.path.join(result_dir, "test_metrics.csv")
-    df.to_csv(csv_path, index=False)
-    print(f"\n✅ Detailed metrics saved to: {csv_path}")
-    print(f"🖼️  Visualization images saved to: {result_dir}")
+    # 1. 保存 A. test_comprehensive.csv (作图灵魂)
+    df_full = pd.DataFrame(clinical_records)
+    csv_path = os.path.join(Config.RESULT_DIR, "test_comprehensive.csv")
+    df_full.to_csv(csv_path, index=False)
+    
+    # 2. 计算并输出 Table III 的统计量 (Mean ± Std)
+    # 先按受试者取平均，再算所有人之间的标准差
+    subject_wise_mean = df_full.groupby('Subject_ID').mean()
+    print("\n📊 Table III Statistics (Inter-subject):")
+    for col in ['PCC', 'MAE', 'HR_Pred', 'HR_True']:
+        print(f"   {col}: {subject_wise_mean[col].mean():.4f} ± {subject_wise_mean[col].std():.4f}")
+
+    # 3. 保存 B. visualization_data.npz (选出 Best/Worst Case)
+    vis_data_pool.sort(key=lambda x: x['pcc']) # 按 PCC 排序
+    # 提取典型案例
+    best_case = vis_data_pool[-1]
+    worst_case = vis_data_pool[0]
+    median_case = vis_data_pool[len(vis_data_pool)//2]
+    
+    npz_path = os.path.join(Config.RESULT_DIR, "visualization_data.npz")
+    np.savez(npz_path, 
+             best_radar=best_case['radar'], best_ecg_true=best_case['ecg_true'], 
+             best_ecg_pred=best_case['ecg_pred'], best_mask_pred=best_case['mask_pred'],
+             worst_radar=worst_case['radar'], worst_ecg_true=worst_case['ecg_true'],
+             worst_ecg_pred=worst_case['ecg_pred'], worst_mask_pred=worst_case['mask_pred'])
+    
+    print(f"\n✅ 全量原始数据导出成功！")
+    print(f"   - 详细清单 (CSV): {csv_path}")
+    print(f"   - 绘图矩阵 (NPZ): {npz_path}")
 
 if __name__ == "__main__":
     test()

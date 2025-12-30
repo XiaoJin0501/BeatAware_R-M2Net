@@ -14,6 +14,9 @@ class RadarDataset(Dataset):
         # 预先读取数据长度，但不保持文件打开 (避免多进程冲突)
         with h5py.File(self.h5_file_path, 'r') as f:
             self.length = len(f['radar'])
+            # 优先读取 H5 中的 subject_id，否则按逻辑生成
+            self.subject_ids = f['subject_id'][:]
+            
             
     def __len__(self):
         return self.length
@@ -26,13 +29,16 @@ class RadarDataset(Dataset):
             radar = f['radar'][idx]
             ecg = f['ecg'][idx]
             mask = f['mask'][idx]
+            # subject_id 不在这里读，直接用 __init__ 缓存好的
 
         # 转换为 PyTorch Tensor 并确保是 Float32
         radar_tensor = torch.from_numpy(radar).float()
         ecg_tensor = torch.from_numpy(ecg).float()
         mask_tensor = torch.from_numpy(mask).float()
-
-        return radar_tensor, ecg_tensor, mask_tensor
+        # 3. 从 __init__ 预加载的列表中获取 ID，并转为标准 int
+        subject_id = int(self.subject_ids[idx]) # [核心修正：从缓存取并转为 int]
+        # 返回 4 个值，确保与后续脚本对接
+        return radar_tensor, ecg_tensor, mask_tensor, subject_id 
 
 # --- 简单的测试代码 (Test Block) ---
 if __name__ == '__main__':

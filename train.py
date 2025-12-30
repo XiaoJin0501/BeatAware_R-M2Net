@@ -124,7 +124,7 @@ def train():
         loop = tqdm(train_loader, desc=f"Epoch {epoch+1}/{Config.EPOCHS} [Train]")
         
         # 加上 enumerate，这样才能拿到 step (i) 用于画连续曲线
-        for i, (radar, ecg, mask) in enumerate(loop):
+        for i, (radar, ecg, mask, subject_id) in enumerate(loop):
             current_step = epoch * len(train_loader) + i
             radar, ecg, mask = radar.to(Config.DEVICE), ecg.to(Config.DEVICE), mask.to(Config.DEVICE)
             optimizer.zero_grad()
@@ -176,7 +176,7 @@ def train():
         model.eval()
         val_loss_avg = 0
         with torch.no_grad():
-            for radar, ecg, mask in test_loader:
+            for radar, ecg, mask, subject_id in test_loader:
                 radar, ecg, mask = radar.to(Config.DEVICE), ecg.to(Config.DEVICE), mask.to(Config.DEVICE)
                 # ✅ 验证集也需要接收两个返回值 (pred_mask 被忽略)
                 pred_ecg, _ = model(radar)

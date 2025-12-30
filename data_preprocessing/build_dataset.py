@@ -85,7 +85,7 @@ def min_max_normalize_strict(data):
 # 数据处理核心循环
 # ==========================================
 
-def process_subject(file_path):
+def process_subject(file_path, sid):
     """处理单个受试者，返回该受试者所有的合格片段列表"""
     fname = os.path.basename(file_path) # 先定义 fname
     data = utils.load_mat_file(file_path)
@@ -164,7 +164,8 @@ def process_subject(file_path):
         segments.append({
             'radar': z_score_normalize(radar_aligned[start:end]),
             'ecg': min_max_normalize_strict(ecg_aligned[start:end]), # 必须归一化到 [0, 1]
-            'mask': mask[start:end]
+            'mask': mask[start:end],
+            'sid': sid # 新增：记录受试者ID
         })
         
     return segments
@@ -180,12 +181,16 @@ def save_h5(segments, filename):
     radar_stack = np.stack([s['radar'] for s in segments])[:, np.newaxis, :]
     ecg_stack = np.stack([s['ecg'] for s in segments])[:, np.newaxis, :]
     mask_stack = np.stack([s['mask'] for s in segments])[:, np.newaxis, :]
+    # [新增] 提取并保存 Subject ID 数组
+    # sid 是一维数组，形状为 (num_samples,)
+    sid_stack = np.array([s['sid'] for s in segments], dtype=np.int32) #
     
     print(f"  -> Saving {len(segments)} samples to {filename}")
     with h5py.File(filename, 'w') as f:
         f.create_dataset('radar', data=radar_stack)
         f.create_dataset('ecg', data=ecg_stack)
         f.create_dataset('mask', data=mask_stack)
+        f.create_dataset('subject_id', data=sid_stack) # 新增 subject_id 数据集
 
 def main():
     # 创建目录
@@ -216,7 +221,7 @@ def main():
         except:
             continue
             
-        sub_segs = process_subject(fpath)
+        sub_segs = process_subject(fpath, sid)
         
         # 核心筛选逻辑
         if len(sub_segs) >= Config.MIN_VALID_SEGMENTS_PER_SUBJECT:
