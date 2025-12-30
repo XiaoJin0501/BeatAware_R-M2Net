@@ -2,6 +2,7 @@ import os
 import torch
 import numpy as np
 import pandas as pd
+import argparse  # <--- [核心修复] 补上这一行
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 # ✅ [新增] 引入 defaultdict，自动处理所有指标 Key

@@ -116,16 +116,16 @@ def train():
     for epoch in range(start_epoch, Config.EPOCHS):
         # --- Training Phase ---
         model.train()
-        train_loss_avg = 0
-        train_L1_avg = 0
-        train_STFT_avg = 0
-        train_Anchor_avg = 0
+        
+        # ✅ [新增] 增加 Smooth 统计变量
+        train_loss_avg, train_L1_avg, train_STFT_avg, train_Anchor_avg, train_Smooth_avg = 0, 0, 0, 0, 0
         
         # 使用 tqdm 显示进度条，不刷屏 log 文件
         loop = tqdm(train_loader, desc=f"Epoch {epoch+1}/{Config.EPOCHS} [Train]")
         
         # 加上 enumerate，这样才能拿到 step (i) 用于画连续曲线
         for i, (radar, ecg, mask) in enumerate(loop):
+            current_step = epoch * len(train_loader) + i
             radar, ecg, mask = radar.to(Config.DEVICE), ecg.to(Config.DEVICE), mask.to(Config.DEVICE)
             optimizer.zero_grad()
             
@@ -149,6 +149,7 @@ def train():
             train_L1_avg += l_time.item()
             train_STFT_avg += l_freq.item()
             train_Anchor_avg += l_anchor.item()
+            train_Smooth_avg += l_smooth.item() # ✅ 统计 Smooth Loss
             
             # 进度条显示实时 Loss
             loop.set_postfix(loss=loss.item(), L1=l_time.item(), STFT=l_freq.item(), Anchor=l_anchor.item(), Smooth=l_smooth.item())
@@ -162,12 +163,14 @@ def train():
                 writer.add_scalar('Loss/Train_L1', l_time.item(), current_step)
                 writer.add_scalar('Loss/Train_STFT', l_freq.item(), current_step)
                 writer.add_scalar('Loss/Train_Anchor', l_anchor.item(), current_step)
+                writer.add_scalar('Loss/Train_Smooth', l_smooth.item(), current_step)
 
         # ✅ [修改 3] 计算所有 Loss 的平均值
         train_loss_avg /= len(train_loader)
         train_L1_avg /= len(train_loader)
         train_STFT_avg /= len(train_loader)
         train_Anchor_avg /= len(train_loader)
+        train_Smooth_avg /= len(train_loader)
         
         # --- Validation Phase ---
         model.eval()
@@ -178,7 +181,7 @@ def train():
                 # ✅ 验证集也需要接收两个返回值 (pred_mask 被忽略)
                 pred_ecg, _ = model(radar)
                 # 验证集通常只看重建 Loss，不需要算 Anchor Loss
-                loss, _, _, _ = criterion(pred_ecg, ecg, None, None)
+                loss, _, _, _, _ = criterion(pred_ecg, ecg, None, None)
                 val_loss_avg += loss.item()
                 
         val_loss_avg /= len(test_loader)
