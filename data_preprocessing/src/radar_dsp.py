@@ -43,11 +43,11 @@ def process_radar_signal(radar_i, radar_q, fs_raw, fs_target, bandpass_freqs):
     # 1. 椭圆拟合校准
     i_calib, q_calib = fit_ellipse(radar_i, radar_q)
     
-    # 2. 相位解调
+    # 2. 相位解调 (Arctan + Unwrap)
     phase = np.unwrap(np.arctan2(q_calib, i_calib))
     
-    # 3. 降采样 (防止混叠，使用 polyphase 重采样)
-    # 计算最大公约数以获得整数倍率
+    # 3. 降采样 [核心微调] 重采样逻辑 (必须先于滤波，或确保与 ECG 顺序一致)
+    # 使用 resample_poly 以防止降采样过程中的 R 峰特征/相位丢失
     gcd_fs = np.gcd(fs_raw, fs_target)
     up = fs_target // gcd_fs
     down = fs_raw // gcd_fs
@@ -55,12 +55,15 @@ def process_radar_signal(radar_i, radar_q, fs_raw, fs_target, bandpass_freqs):
     if up == 1 and down == 1:
         phase_resampled = phase
     else:
-        phase_resampled = resample_poly(phase, up, down)
+        phase_resampled = resample_poly(phase, up, down) # 使用多相滤波进行高质量重采样
         
-    # 4. 带通滤波 (提取胸部机械位移)(0.8 - 30.0 Hz)
-    # 注意: 差分(Diff) 实际上是一个高通滤波器，这里直接用带通代替，保留位移波形
+    # 4. 带通滤波 (提取胸部机械位移)(0.8 - 30.0 Hz) (使用 filtfilt 确保零相位偏移)
+    # 这一步必须与 ecg_dsp.py 的滤波相位完全同步
     nyquist = 0.5 * fs_target
-    b, a = butter(4, [bandpass_freqs[0] / nyquist, bandpass_freqs[1] / nyquist], btype='band')
+    low = bandpass_freqs[0] / nyquist
+    high = bandpass_freqs[1] / nyquist
+    b, a = butter(4, [low, high], btype='band')
+    # [关键] filtfilt 消除时间偏移，确保 $PCC > 0.9$ 的基础
     displacement = filtfilt(b, a, phase_resampled)
     
     # 5. 【核心修改】一阶差分提取速度信号 (Enhance Heartbeat Jumps)
@@ -69,6 +72,7 @@ def process_radar_signal(radar_i, radar_q, fs_raw, fs_target, bandpass_freqs):
     
     # 6. 【核心修改】Z-Score 标准化
     # 必须保证输入特征均值为 0，标准差为 1，以适配神经网络
+    # 强制将任何产生的 NaN 替换为 0
     radar_input = (velocity - np.mean(velocity)) / (np.std(velocity) + 1e-8)
     
-    return radar_input
+    return np.nan_to_num(radar_input)

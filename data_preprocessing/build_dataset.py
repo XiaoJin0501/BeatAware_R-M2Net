@@ -4,6 +4,7 @@ import h5py
 import numpy as np
 from tqdm import tqdm
 import sys
+from scipy.stats import pearsonr
 
 # 将当前脚本所在的目录添加到 sys.path，确保能找到 config 和 src 包
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -86,7 +87,7 @@ def min_max_normalize_strict(data):
 # ==========================================
 
 def process_subject(file_path, sid):
-    """处理单个受试者，返回该受试者所有的合格片段列表"""
+    """处理单个受试者，加入窗口级微调对齐与质量控制"""
     fname = os.path.basename(file_path) # 先定义 fname
     data = utils.load_mat_file(file_path)
     if data is None: return []
@@ -102,7 +103,7 @@ def process_subject(file_path, sid):
             return []
         
     # --- 信号处理 ---
-    # [修正2] 使用 Config 类名访问参数 (注意大写 C)
+    # 1. 基础滤波, 确保 DSP 脚本内已使用 filtfilt 和 resample_poly
     radar_clean = radar_dsp.process_radar_signal(
         r_i, r_q, Config.FS_RADAR_RAW, Config.FS_TARGET, Config.RADAR_BANDPASS
     )
@@ -122,50 +123,78 @@ def process_subject(file_path, sid):
     except Exception as e:
         print(f"  [Debug] {fname}: Alignment crash - {e}")
         return []
-    
-    # # 2. 长度对齐 (先截断到相同长度)
-    # min_len = min(len(radar_clean), len(ecg_clean))
-    # radar_clean = radar_clean[:min_len]
-    # ecg_clean = ecg_clean[:min_len]
-    
-    # # ========== 加入相位对齐 ==========
-    # # 雷达的心跳分量通常滞后于ECG的R波，如果不强制对齐，模型学不到东西
-    # try:
-    #     radar_clean, ecg_clean = align_signals(radar_clean, ecg_clean, Config.FS_TARGET)
-    # except Exception as e:
-    #     print(f"Skipping {os.path.basename(file_path)}: Alignment error {e}")
-    #     return []
+
     
     # --- Anchor 生成 ---
-    mask, r_peaks = ecg_dsp.generate_anchor_mask(ecg_clean, Config.FS_TARGET, Config.ANCHOR_SIGMA)
+    mask, r_peaks = ecg_dsp.generate_anchor_mask(ecg_aligned, Config.FS_TARGET, Config.ANCHOR_SIGMA)   # ✅【CHANGED】
+    assert len(mask) == len(ecg_aligned), f"[Debug] {fname}: mask/ecg_aligned length mismatch"         # ✅【ADDED】
+    
+    # 4. 预设局部微调所需的滤波器 (0.8-3.0Hz 提取心跳成分)
+    nyq = 0.5 * Config.FS_TARGET
+    b_micro, a_micro = signal.butter(4, [0.8 / nyq, 3.0 / nyq], btype='band')
     
     # --- 切片与筛选 ---
     win_pts = int(Config.WINDOW_SECONDS * Config.FS_TARGET)
     stride_pts = int(Config.STRIDE_SECONDS * Config.FS_TARGET)
     
     segments = []
+    # 强制将 radar_clean 中的 NaN 替换为 0，防止计算崩溃
+    radar_aligned = np.nan_to_num(radar_aligned)
+    ecg_aligned = np.nan_to_num(ecg_aligned)   # ✅【ADDED】防止 pearsonr / filtfilt / 峰检被 NaN 污染
     
-    for start in range(0, len(radar_clean) - win_pts, stride_pts):
+    for start in range(0, len(radar_aligned) - win_pts, stride_pts):
         end = start + win_pts
         
-        seg_radar = z_score_normalize(radar_aligned[start:end])
+        # --- 局部微调补丁 (冲击 0.9 PCC 的关键) ---
+        # 获取当前窗口的临时片段
+        temp_radar = radar_aligned[start:end]
+        temp_ecg = ecg_aligned[start:end]
         
-        # 新增：剔除离群值片段 (峰值过大) # 检查是否存在绝对值超过 15 的极端伪影 (比如Sample 0)
-        if np.max(np.abs(seg_radar)) > 15:
-            # print(f"  [QC] Dropping segment due to motion artifact (peak: {np.max(np.abs(seg_radar)):.2f})")
+        # --- 局部微调补丁 (扩大的搜索范围 + 心跳频段提取) ---
+        # 提取心跳成分用于计算对齐，不受呼吸干扰
+        temp_radar_f = signal.filtfilt(b_micro, a_micro, temp_radar)
+        temp_ecg_f = signal.filtfilt(b_micro, a_micro, temp_ecg)
+        
+        # 互相关计算 (搜索范围扩大到 +/- 40 点，即 200ms)
+        corr = signal.correlate(temp_ecg_f - np.mean(temp_ecg_f), temp_radar_f - np.mean(temp_radar_f), mode='full')
+        lags_axis = signal.correlation_lags(len(temp_ecg_f), len(temp_radar_f), mode='full')
+        
+        search_mask = (lags_axis >= -40) & (lags_axis <= 40)
+        valid_lags = lags_axis[search_mask]
+        valid_corr = corr[search_mask]
+        
+        local_lag = valid_lags[np.argmax(np.abs(valid_corr))]
+        
+        # 根据 local_lag 重新确定雷达窗口起点
+        adj_start = start + local_lag
+        adj_end = adj_start + win_pts
+        
+        # 边界安全检查
+        if adj_start < 0 or adj_end > len(radar_aligned):
             continue
         
+        # --- B. 引入“相关性强度”作为硬指标 ---
+        final_seg_radar = radar_aligned[adj_start:adj_end]
+        final_seg_ecg = ecg_aligned[start:end]
         
-        # SQI 检查 (基于对齐后的 R peaks) 
+        # 计算对齐后的片段相关系数 (PCC)
+        # 注意：这里计算的是物理信号的相关性，阈值设为 0.3
+        pcc_val, _ = pearsonr(final_seg_radar, final_seg_ecg)
+        if abs(pcc_val) < 0.3:
+            continue
+        
+        # 6. 质量控制 (SQI 检查)
+        seg_mask = mask[start:end]
         seg_r_peaks = [p - start for p in r_peaks if start <= p < end]
         if not quality_control.check_sqi(seg_r_peaks, win_pts, Config.FS_TARGET, Config.SQI_HR_MIN, Config.SQI_HR_MAX):
             continue
         
+        # 7. 归一化并存入列表
         segments.append({
-            'radar': z_score_normalize(radar_aligned[start:end]),
-            'ecg': min_max_normalize_strict(ecg_aligned[start:end]), # 必须归一化到 [0, 1]
-            'mask': mask[start:end],
-            'sid': sid # 新增：记录受试者ID
+            'radar': z_score_normalize(final_seg_radar),
+            'ecg': min_max_normalize_strict(final_seg_ecg),
+            'mask': seg_mask,
+            'sid': sid 
         })
         
     return segments

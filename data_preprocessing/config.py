@@ -23,13 +23,13 @@ class Config:
     ECG_BANDPASS = [0.5, 40.0]   
     
     # ------------------ 数据集动态划分策略 ------------------
-    MIN_VALID_SEGMENTS_PER_SUBJECT = 10 
+    MIN_VALID_SEGMENTS_PER_SUBJECT = 3 
     TEST_RATIO_A = 0.2 
     TEST_RATIO_B = 0.2
     
     # ------------------ 切片与Anchor ------------------
     WINDOW_SECONDS = 8.0         
-    STRIDE_SECONDS = 1.6         
+    STRIDE_SECONDS = 1.0         
     ANCHOR_SIGMA = 5             
     
     # ------------------ 质量控制 ------------------

@@ -3,8 +3,8 @@ from scipy.signal import butter, filtfilt, resample_poly, find_peaks
 from scipy.stats import norm
 
 def process_ecg_signal(ecg_raw, fs_raw, fs_target, bandpass_freqs):
-    """ECG 滤波与降采样"""
-    # 1. 降采样
+    """ECG 滤波与降采样：加入极性修正与稳健归一化"""
+    # 1. 降采样 resample_poly 自带抗混叠滤波
     gcd_fs = np.gcd(fs_raw, fs_target)
     up = fs_target // gcd_fs
     down = fs_raw // gcd_fs
@@ -21,6 +21,14 @@ def process_ecg_signal(ecg_raw, fs_raw, fs_target, bandpass_freqs):
     b, a = butter(4, [low, high], btype='band')
     ecg_clean = filtfilt(b, a, ecg_res)
     
+    # 3. [核心微调] 极性自动纠正
+    # 如果向下脉冲的绝对值大于向上脉冲，说明信号反转了
+    if np.abs(np.max(ecg_clean)) < np.abs(np.min(ecg_clean)):
+        ecg_clean = -ecg_clean
+    
+    # 4. [新增] 局部 Z-Score 归一化，使信号处于标准量级，提升寻峰成功率
+    ecg_clean = (ecg_clean - np.mean(ecg_clean)) / (np.std(ecg_clean) + 1e-8)
+    
     return ecg_clean
 
 def generate_anchor_mask(ecg_signal, fs, sigma_points=5):
@@ -35,8 +43,8 @@ def generate_anchor_mask(ecg_signal, fs, sigma_points=5):
     # fs = 200Hz 时, distance = 60 点
     distance = int(0.3 * fs)
     q_high, q_low = np.percentile(ecg_signal, [99, 1])
-    # [修改点] 降低阈值系数到 0.15 (15%)
-    prominence = 0.15 * (q_high - q_low)
+    # [修改点] 降低阈值系数到 0.5 (50%)
+    prominence = 0.5 * (q_high - q_low)
     # 防止信号是直线导致 prominence 为 0
     if prominence < 1e-6:
         prominence = 0.1 # 给个默认值
@@ -44,20 +52,26 @@ def generate_anchor_mask(ecg_signal, fs, sigma_points=5):
     
     # 2. 生成高斯 Mask
     mask = np.zeros_like(ecg_signal)
-    x = np.arange(-3*sigma_points, 3*sigma_points + 1)
+    # 定义核的半径
+    radius = 4 * sigma_points
+    x = np.arange(-radius, radius + 1)
+    
     gaussian_kernel = np.exp(-(x**2) / (2 * sigma_points**2))
-    # 归一化到 [0, 1]
-    gaussian_kernel = gaussian_kernel / np.max(gaussian_kernel) 
+    gaussian_kernel = gaussian_kernel / np.max(gaussian_kernel) # 归一化到最大值为1
     
     for r in r_peaks:
-        # 边界处理
-        start_k = max(0, - (r - 3*sigma_points))
-        end_k = min(len(gaussian_kernel), len(ecg_signal) - (r - 3*sigma_points))
+        # 计算在 mask 中的起止位置
+        m_start = max(0, r - radius)
+        m_end = min(len(ecg_signal), r + radius + 1)
         
-        start_m = max(0, r - 3*sigma_points)
-        end_m = min(len(ecg_signal), r + 3*sigma_points + 1)
+        # 对应在 gaussian_kernel 中的范围
+        # 如果 r-radius < 0，说明左边越界，核也要从后面截取
+        k_start = radius - (r - m_start)
+        # 长度必须保持一致
+        k_end = k_start + (m_end - m_start)
         
-        # 叠加 (防止重叠处的数值爆炸，取最大值)
-        mask[start_m:end_m] = np.maximum(mask[start_m:end_m], gaussian_kernel[start_k:end_k])
-        
+        # 执行叠加
+        if (m_end - m_start) > 0:
+            mask[m_start:m_end] = np.maximum(mask[m_start:m_end], gaussian_kernel[k_start:k_end])
+    
     return mask, r_peaks

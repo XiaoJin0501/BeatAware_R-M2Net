@@ -8,7 +8,7 @@ class MultiResolutionSTFTLoss(nn.Module):
     用于在频域约束模型，确保 P波 和 T波 等微细结构的保真度。
     参考: Parallel WaveGAN / HiFi-GAN
     """
-    def __init__(self, fft_sizes=[64, 128, 256], hop_sizes=[8, 16, 32], win_lengths=[32, 64, 128]):
+    def __init__(self, fft_sizes=[128, 256, 512], hop_sizes=[10, 20, 50], win_lengths=[50, 100, 200]):
         super().__init__()
         self.fft_sizes = fft_sizes
         self.hop_sizes = hop_sizes
@@ -39,9 +39,9 @@ class MultiResolutionSTFTLoss(nn.Module):
             sc_loss = torch.norm(x_real_mag - x_fake_mag, p="fro") / (torch.norm(x_real_mag, p="fro") + 1e-6)
             
             # 2. Log Magnitude Loss (对数幅度损失 - 关注低能量细节)
-            mag_loss = F.l1_loss(torch.log(x_real_mag + 1e-6), torch.log(x_fake_mag + 1e-6))
+            mag_loss = F.l1_loss(torch.log10(x_real_mag + 1e-6), torch.log10(x_fake_mag + 1e-4))
             
-            loss += sc_loss + mag_loss
+            loss += sc_loss + 0.1 * mag_loss
             
         return loss / len(self.fft_sizes)
 
