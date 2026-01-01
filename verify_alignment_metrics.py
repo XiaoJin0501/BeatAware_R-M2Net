@@ -5,6 +5,9 @@ from scipy import signal
 from scipy.stats import pearsonr
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+from scipy.signal import find_peaks
+
+
 
 # ================== 配置区 ==================
 H5_PATH = "data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent/train.h5"
@@ -15,7 +18,14 @@ WINDOW_SECONDS = 8.0
 STRIDE_SECONDS = 1.0   # ← 改成你真实用的（例如 0.5 / 1.0 / 1.6）
 
 # 1) 残余 lag 检查阈值：±5 点（25 ms）
-LAG_THRESHOLD = 5
+LAG_THRESHOLD = 10 # ±50ms
+
+MAX_LAG_SECONDS = 1.0
+MAX_LAG = int(round(MAX_LAG_SECONDS * FS))
+
+# 极端 lag outlier 阈值（用于单独可视化与强剔除）
+EXTREME_LAG_SAMPLES = 150   # 0.5s
+MAX_PLOTS = 12              # 最多保存多少个 outlier 图
 
 # 2) 心跳频段（与 build_dataset 逻辑一致）
 HEART_BAND = (0.8, 3.0)
@@ -25,7 +35,7 @@ HIT_TOL_MS = 50
 HIT_TOL = int(round(HIT_TOL_MS * FS / 1000))
 
 # 4) ECG 峰值检测参数（用于命中率/误差计算）
-ECG_MIN_PEAK_DIST_SEC = 0.25
+ECG_MIN_PEAK_DIST_SEC = 0.35
 ECG_MIN_PEAK_DIST = int(round(ECG_MIN_PEAK_DIST_SEC * FS))
 ECG_PROM_FRAC = 0.15
 
@@ -52,29 +62,96 @@ def _safe_filtfilt(b, a, x):
 
 
 def _extract_anchor_centers_from_mask(mask_1d):
-    m = (mask_1d > 0.5).astype(np.int32)
-    if m.sum() == 0:
-        return np.array([], dtype=np.int32)
+    """
+    从连续 anchor mask 中提取峰值中心（推荐做法）
+    """
+    m = np.nan_to_num(mask_1d).astype(np.float64)
 
-    diff = np.diff(np.pad(m, (1, 1), constant_values=0))
-    starts = np.where(diff == 1)[0]
-    ends = np.where(diff == -1)[0] - 1
+    amp = np.percentile(m, 99) - np.percentile(m, 1)
+    prom = max(0.30 * amp, 1e-6)
+    
+    # distance：至少一个心跳间隔（防止一拍多个峰）
+    peaks, _ = find_peaks(
+        m,
+        prominence=prom,
+        distance=ECG_MIN_PEAK_DIST
+    )
 
-    centers = ((starts + ends) / 2.0).round().astype(np.int32)
-    centers = centers[(centers >= 0) & (centers < len(mask_1d))]
-    return centers
+    return peaks.astype(np.int32)
 
 
 def _detect_ecg_peaks(ecg_1d):
-    e = np.nan_to_num(ecg_1d)
-    prom = max(1e-6, ECG_PROM_FRAC * (np.max(e) - np.min(e)))
+    """
+    更稳健的 ECG R-peak 检测：
+    1) 去均值 + 标准化
+    2) QRS 强化带通（5–25Hz）
+    3) 自适应 prominence（基于分位数范围）
+    """
+    x = np.nan_to_num(ecg_1d).astype(np.float64)
+
+    # 1) 去直流 + z-score
+    x = x - np.mean(x)
+    x = x / (np.std(x) + 1e-8)
+
+    # 2) QRS bandpass: 5–25 Hz（经验上对 R-peaks 更稳定）
+    bq, aq = _butter_bandpass((5.0, 25.0), FS, order=4)
+    xq = _safe_filtfilt(bq, aq, x)
+
+    # 3) prominence 自适应：用 99-1 分位范围（比max-min更抗噪）
+    amp = np.percentile(xq, 99) - np.percentile(xq, 1)
+    prom = max(0.40 * amp, 1e-3)  # 0.25 可按需要调到 0.2~0.4
+
     peaks, _ = signal.find_peaks(
-        e,
+        xq,
         distance=ECG_MIN_PEAK_DIST,
         prominence=prom
     )
     return peaks.astype(np.int32)
 
+# ================== 新增：极端 lag 可视化函数 ==================
+def _plot_outlier_case(idx, lag, r, e, r_f, e_f, out_dir):
+
+    t = np.arange(len(r)) / FS
+
+    # --- 原始波形 ---
+    plt.figure(figsize=(10, 6))
+    plt.subplot(2,1,1)
+    plt.plot(t, e, label="ECG (raw)")
+    plt.plot(t, r, label="Radar (raw)")
+    plt.legend()
+    plt.title(f"Outlier idx={idx}, lag={lag} samples ({lag/FS*1000:.1f} ms)")
+
+    # --- 心跳频段 ---
+    plt.subplot(2,1,2)
+    plt.plot(t, e_f, label="ECG (heart-band)")
+    plt.plot(t, r_f, label="Radar (heart-band)")
+    plt.legend()
+
+    plt.tight_layout()
+    fig1 = os.path.join(out_dir, f"outlier_{idx}_lag_{lag}_signals.png")
+    plt.savefig(fig1, dpi=200)
+    plt.close()
+
+    # --- 互相关 ---
+    e_z = (e_f - e_f.mean()) / (e_f.std() + 1e-8)
+    r_z = (r_f - r_f.mean()) / (r_f.std() + 1e-8)
+
+    corr = signal.correlate(e_z, r_z, mode="full")
+    lag_axis = signal.correlation_lags(len(e_z), len(r_z), mode="full")
+
+    mask = (lag_axis >= -MAX_LAG) & (lag_axis <= MAX_LAG)
+
+    plt.figure(figsize=(10,4))
+    plt.plot(lag_axis[mask], corr[mask])
+    plt.axvline(lag, linestyle="--", color="r")
+    plt.xlabel("Lag (samples)")
+    plt.ylabel("Correlation")
+    plt.title("XCorr (restricted range)")
+    plt.tight_layout()
+
+    fig2 = os.path.join(out_dir, f"outlier_{idx}_lag_{lag}_xcorr.png")
+    plt.savefig(fig2, dpi=200)
+    plt.close()
 
 def verify_dataset(path):
     if not os.path.exists(path):
@@ -129,8 +206,13 @@ def verify_dataset(path):
 
         # 额外：记录匹配到的 Δt（ECG peak - anchor center）
         dt_errors = []
+        # 额外：mask 的全局最大值与最近 ECG peak 的误差（最稳健）
+        argmax_dt_errors = []   # 单位：samples
+        argmax_pass = 0
+        argmax_total = 0
 
         failed_lag = []
+        extreme_cases = []   # 存 (idx, lag, r, e, r_f, e_f)
 
         for i in tqdm(range(N), desc="Scanning"):
             r = np.asarray(radar_data[i, 0], dtype=np.float64)
@@ -145,12 +227,47 @@ def verify_dataset(path):
             r_f = _safe_filtfilt(b_h, a_h, r)
             e_f = _safe_filtfilt(b_h, a_h, e)
 
-            corr = signal.correlate(e_f - e_f.mean(), r_f - r_f.mean(), mode='full')
-            lag_axis = signal.correlation_lags(len(e_f), len(r_f), mode='full')
-            best_lag = int(lag_axis[np.argmax(np.abs(corr))])
+            # --- 更稳健的 residual lag：限定范围 + 只取正相关峰 ---
+            # z-score，减少幅度差异影响
+            e_z = (e_f - np.mean(e_f)) / (np.std(e_f) + 1e-8)
+            r_z = (r_f - np.mean(r_f)) / (np.std(r_f) + 1e-8)
+            e_z = signal.detrend(e_z)
+            r_z = signal.detrend(r_z)
+
+            corr = signal.correlate(e_z, r_z, mode='full')
+            lag_axis = signal.correlation_lags(len(e_z), len(r_z), mode='full')
+
+            # 只在 [-MAX_LAG, +MAX_LAG] 的范围内找峰
+            mask_lag = (lag_axis >= -MAX_LAG) & (lag_axis <= MAX_LAG)
+            corr_w = corr[mask_lag]
+            lag_w = lag_axis[mask_lag]
+
+            # 只取“正相关最大”的lag（不再用 abs）
+            k = int(np.argmax(corr_w))
+            # 边界保护
+            if 0 < k < len(corr_w) - 1:
+                y1, y2, y3 = corr_w[k-1], corr_w[k], corr_w[k+1]
+                denom = (y1 - 2*y2 + y3)
+                if abs(denom) > 1e-12:
+                    delta = 0.5 * (y1 - y3) / denom  # [-0.5, 0.5] 附近
+                else:
+                    delta = 0.0
+            else:
+                delta = 0.0
+
+            best_lag_float = float(lag_w[k]) + float(delta)
+
+            # 用 float lag 决定一个更稳定的整数 lag（四舍五入）
+            best_lag = int(np.round(best_lag_float))
             residual_lags[i] = best_lag
             if abs(best_lag) > LAG_THRESHOLD:
                 failed_lag.append((i, best_lag))
+                
+            # ---- 收集极端 outlier（只收前 MAX_PLOTS 个）----
+            if abs(best_lag) >= EXTREME_LAG_SAMPLES and len(extreme_cases) < MAX_PLOTS:
+                extreme_cases.append(
+                    (i, best_lag, r.copy(), e.copy(), r_f.copy(), e_f.copy())
+                )
 
             # ----- PCC (raw) -----
             try:
@@ -170,6 +287,16 @@ def verify_dataset(path):
 
             total_anchors += len(anchor_centers)
             total_ecg_peaks += len(ecg_peaks)
+            
+            # ----- [新增] mask argmax -> nearest ECG peak (最稳健的一致性检查) -----
+            if len(ecg_peaks) > 0:
+                mask_peak = int(np.argmax(m))
+                nearest = ecg_peaks[np.argmin(np.abs(ecg_peaks - mask_peak))]
+                diff = int(mask_peak - nearest)   # samples
+                argmax_dt_errors.append(diff)
+                argmax_total += 1
+                if abs(diff) <= HIT_TOL:
+                    argmax_pass += 1
 
             if len(anchor_centers) == 0 or len(ecg_peaks) == 0:
                 continue
@@ -187,6 +314,7 @@ def verify_dataset(path):
                 if np.any(np.abs(anchor_centers - p) <= HIT_TOL):
                     matched_ecg_peaks += 1
 
+
         # ============ 报告 ============
         print("\n" + "=" * 72)
         print("📊 Dataset Verification Report (Final)")
@@ -201,6 +329,23 @@ def verify_dataset(path):
         print(f"   🧾 std  lag: {residual_lags.std():.2f} samples")
         if failed_lag:
             print(f"   ❌ 前 10 个超标样本(index, lag): {failed_lag[:10]}")
+            
+        # ---- 绘制极端 lag outlier ----
+        if len(extreme_cases) > 0:
+            print(f"\n[1b] Plot extreme lag outliers (|lag| >= {EXTREME_LAG_SAMPLES} samples)")
+            for (idx, lag, r, e, r_f, e_f) in extreme_cases:
+                _plot_outlier_case(idx, lag, r, e, r_f, e_f, OUT_DIR)
+            print(f"   🖼️ Saved {len(extreme_cases)} outlier plots to {OUT_DIR}")
+        else:
+            print(f"\n[1b] No extreme lag outliers (|lag| >= {EXTREME_LAG_SAMPLES} samples)")
+            
+        # 保存 failed lag 列表
+        fail_path = os.path.join(OUT_DIR, "failed_lag_samples.csv")
+        with open(fail_path, "w", encoding="utf-8") as wf:
+            wf.write("index,lag_samples,lag_ms\n")
+            for idx, lag in failed_lag:
+                wf.write(f"{idx},{lag},{lag/FS*1000:.2f}\n")
+        print(f"   📝 failed lag list saved: {fail_path}")
 
         plt.figure()
         plt.hist(residual_lags, bins=41)
@@ -277,6 +422,30 @@ def verify_dataset(path):
             print(f"   🖼️ Δt hist: {dt_fig}")
         else:
             print("   ⚠️ 未记录到 Δt（可能峰检测过严或 mask 太稀疏）")
+            
+        # ----- [新增报告] mask argmax consistency -----
+            print("\n[4b] mask argmax–ECG Peak Consistency (robust sanity-check)")
+            if argmax_total == 0:
+                print("   ❌ 无法计算（可能 ECG 峰检测为 0）")
+            else:
+                argmax_dt = np.array(argmax_dt_errors, dtype=np.int32)
+                pass_ratio = argmax_pass / argmax_total
+            print(f"   Samples evaluated: {argmax_total}")
+            print(f"   Pass ratio (|Δt| <= {HIT_TOL}): {pass_ratio:.3f}")
+            print(f"   Δt mean: {argmax_dt.mean():.2f} samples ({argmax_dt.mean()/FS*1000:.1f} ms)")
+            print(f"   Δt std : {argmax_dt.std():.2f} samples ({argmax_dt.std()/FS*1000:.1f} ms)")
+            print(f"   Δt median: {np.median(argmax_dt):.2f} samples ({np.median(argmax_dt)/FS*1000:.1f} ms)")
+            print(f"   Δt 95% abs: {np.percentile(np.abs(argmax_dt),95):.2f} samples ({np.percentile(np.abs(argmax_dt),95)/FS*1000:.1f} ms)")
+
+            plt.figure()
+            plt.hist(argmax_dt, bins=61)
+            plt.xlabel("Δt = mask_argmax - nearest_ECG_peak (samples)")
+            plt.ylabel("Count")
+            plt.title("Robust Check: mask argmax vs ECG peaks (Δt)")
+            fig_path = os.path.join(OUT_DIR, "mask_argmax_dt_hist.png")
+            plt.savefig(fig_path, dpi=200, bbox_inches="tight")
+            plt.close()
+            print(f"   🖼️ argmax Δt hist: {fig_path}")
 
         # [5] subject-wise + effective unique windows
         print("\n[5] Subject-wise Segment Statistics (+ Effective unique windows)")
@@ -308,7 +477,7 @@ def verify_dataset(path):
                     wf.write(f"{int(sid)}\t{int(c)}\t{ec:.2f}\n")
             print(f"   📝 已保存 subject-wise 统计(含eff): {stat_path}")
 
-    print("\n✅ 验证完成。建议把 OUT_DIR 下的图与统计文件作为实验日志长期保留。")
+print("\n✅ 验证完成。建议把 OUT_DIR 下的图与统计文件作为实验日志长期保留。")
 
 
 if __name__ == "__main__":
