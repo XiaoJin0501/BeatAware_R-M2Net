@@ -1,0 +1,92 @@
+[2025-12-31 21:50:36] INFO: 🚀 Experiment Started: Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced
+[2025-12-31 21:50:36] INFO: 📊 Hyperparams: Alpha=0.05, Beta=1.0
+[2025-12-31 21:50:36] INFO: 📂 Data Directory: /home/qhh2237/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2025-12-31 21:50:36] INFO: 💻 Device: cuda
+[2025-12-31 21:50:36] INFO: ⏳ Loading datasets...
+[2025-12-31 21:50:36] INFO: Data loaded. Train samples: 2993, Test samples: 1168
+[2025-12-31 21:50:37] INFO: ⏳ Initializing model and optimizer...
+[2025-12-31 21:50:37] INFO: Model initialized with 403202 trainable parameters.
+[2025-12-31 21:50:37] INFO: No checkpoint found. Starting fresh training.
+[2025-12-31 21:54:07] INFO: Epoch 001 | Train Total: 0.9592 (L1: 0.1608, STFT: 0.5948, Anchor: 0.7633) | Val Loss: 0.1591
+[2025-12-31 21:54:07] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 21:54:07] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_best.pth
+[2025-12-31 21:57:38] INFO: Epoch 002 | Train Total: 0.7921 (L1: 0.0992, STFT: 0.4455, Anchor: 0.6660) | Val Loss: 0.1651
+[2025-12-31 21:57:38] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 21:57:38] INFO: No improvement for 1/20 epochs.
+[2025-12-31 22:01:08] INFO: Epoch 003 | Train Total: 0.6775 (L1: 0.0864, STFT: 0.4135, Anchor: 0.5660) | Val Loss: 0.1648
+[2025-12-31 22:01:08] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:01:08] INFO: No improvement for 2/20 epochs.
+[2025-12-31 22:04:39] INFO: Epoch 004 | Train Total: 0.5866 (L1: 0.0791, STFT: 0.3928, Anchor: 0.4834) | Val Loss: 0.1321
+[2025-12-31 22:04:39] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:04:39] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_best.pth
+[2025-12-31 22:08:09] INFO: Epoch 005 | Train Total: 0.5237 (L1: 0.0744, STFT: 0.3782, Anchor: 0.4257) | Val Loss: 0.1374
+[2025-12-31 22:08:09] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:08:09] INFO: No improvement for 1/20 epochs.
+[2025-12-31 22:11:40] INFO: Epoch 006 | Train Total: 0.4821 (L1: 0.0722, STFT: 0.3699, Anchor: 0.3867) | Val Loss: 0.1536
+[2025-12-31 22:11:40] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:11:40] INFO: No improvement for 2/20 epochs.
+[2025-12-31 22:15:10] INFO: Epoch 007 | Train Total: 0.4502 (L1: 0.0681, STFT: 0.3580, Anchor: 0.3595) | Val Loss: 0.1239
+[2025-12-31 22:15:10] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:15:10] INFO: Best model saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_best.pth
+[2025-12-31 22:18:40] INFO: Epoch 008 | Train Total: 0.4290 (L1: 0.0668, STFT: 0.3536, Anchor: 0.3397) | Val Loss: 0.1380
+[2025-12-31 22:18:40] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:18:40] INFO: No improvement for 1/20 epochs.
+[2025-12-31 22:22:11] INFO: Epoch 009 | Train Total: 0.4116 (L1: 0.0652, STFT: 0.3482, Anchor: 0.3242) | Val Loss: 0.1283
+[2025-12-31 22:22:11] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:22:11] INFO: No improvement for 2/20 epochs.
+[2025-12-31 22:25:41] INFO: Epoch 010 | Train Total: 0.3969 (L1: 0.0634, STFT: 0.3424, Anchor: 0.3115) | Val Loss: 0.1330
+[2025-12-31 22:25:41] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:25:41] INFO: No improvement for 3/20 epochs.
+[2025-12-31 22:29:11] INFO: Epoch 011 | Train Total: 0.3846 (L1: 0.0621, STFT: 0.3373, Anchor: 0.3008) | Val Loss: 0.1321
+[2025-12-31 22:29:11] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:29:11] INFO: No improvement for 4/20 epochs.
+[2025-12-31 22:32:42] INFO: Epoch 012 | Train Total: 0.3737 (L1: 0.0610, STFT: 0.3327, Anchor: 0.2911) | Val Loss: 0.1264
+[2025-12-31 22:32:42] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:32:42] INFO: No improvement for 5/20 epochs.
+[2025-12-31 22:36:12] INFO: Epoch 013 | Train Total: 0.3631 (L1: 0.0596, STFT: 0.3272, Anchor: 0.2822) | Val Loss: 0.1304
+[2025-12-31 22:36:12] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:36:12] INFO: No improvement for 6/20 epochs.
+[2025-12-31 22:39:42] INFO: Epoch 014 | Train Total: 0.3540 (L1: 0.0589, STFT: 0.3228, Anchor: 0.2740) | Val Loss: 0.1331
+[2025-12-31 22:39:42] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:39:42] INFO: No improvement for 7/20 epochs.
+[2025-12-31 22:43:13] INFO: Epoch 015 | Train Total: 0.3458 (L1: 0.0578, STFT: 0.3176, Anchor: 0.2671) | Val Loss: 0.1278
+[2025-12-31 22:43:13] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:43:13] INFO: No improvement for 8/20 epochs.
+[2025-12-31 22:46:44] INFO: Epoch 016 | Train Total: 0.3394 (L1: 0.0573, STFT: 0.3137, Anchor: 0.2612) | Val Loss: 0.1285
+[2025-12-31 22:46:44] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:46:44] INFO: No improvement for 9/20 epochs.
+[2025-12-31 22:50:15] INFO: Epoch 017 | Train Total: 0.3335 (L1: 0.0565, STFT: 0.3082, Anchor: 0.2564) | Val Loss: 0.1315
+[2025-12-31 22:50:15] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:50:15] INFO: No improvement for 10/20 epochs.
+[2025-12-31 22:54:06] INFO: Epoch 018 | Train Total: 0.3291 (L1: 0.0559, STFT: 0.3035, Anchor: 0.2527) | Val Loss: 0.1358
+[2025-12-31 22:54:06] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:54:06] INFO: No improvement for 11/20 epochs.
+[2025-12-31 22:58:12] INFO: Epoch 019 | Train Total: 0.3255 (L1: 0.0553, STFT: 0.2991, Anchor: 0.2498) | Val Loss: 0.1309
+[2025-12-31 22:58:12] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 22:58:12] INFO: No improvement for 12/20 epochs.
+[2025-12-31 23:02:18] INFO: Epoch 020 | Train Total: 0.3218 (L1: 0.0542, STFT: 0.2940, Anchor: 0.2474) | Val Loss: 0.1336
+[2025-12-31 23:02:18] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 23:02:18] INFO: No improvement for 13/20 epochs.
+[2025-12-31 23:06:22] INFO: Epoch 021 | Train Total: 0.3194 (L1: 0.0536, STFT: 0.2899, Anchor: 0.2457) | Val Loss: 0.1387
+[2025-12-31 23:06:22] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 23:06:22] INFO: No improvement for 14/20 epochs.
+[2025-12-31 23:10:28] INFO: Epoch 022 | Train Total: 0.3174 (L1: 0.0532, STFT: 0.2874, Anchor: 0.2443) | Val Loss: 0.1403
+[2025-12-31 23:10:28] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 23:10:28] INFO: No improvement for 15/20 epochs.
+[2025-12-31 23:14:33] INFO: Epoch 023 | Train Total: 0.3154 (L1: 0.0524, STFT: 0.2831, Anchor: 0.2432) | Val Loss: 0.1407
+[2025-12-31 23:14:33] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 23:14:33] INFO: No improvement for 16/20 epochs.
+[2025-12-31 23:18:38] INFO: Epoch 024 | Train Total: 0.3142 (L1: 0.0523, STFT: 0.2814, Anchor: 0.2421) | Val Loss: 0.1451
+[2025-12-31 23:18:38] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 23:18:38] INFO: No improvement for 17/20 epochs.
+[2025-12-31 23:22:43] INFO: Epoch 025 | Train Total: 0.3123 (L1: 0.0515, STFT: 0.2771, Anchor: 0.2412) | Val Loss: 0.1425
+[2025-12-31 23:22:43] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 23:22:43] INFO: No improvement for 18/20 epochs.
+[2025-12-31 23:26:50] INFO: Epoch 026 | Train Total: 0.3110 (L1: 0.0510, STFT: 0.2743, Anchor: 0.2405) | Val Loss: 0.1381
+[2025-12-31 23:26:50] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 23:26:50] INFO: No improvement for 19/20 epochs.
+[2025-12-31 23:30:55] INFO: Epoch 027 | Train Total: 0.3101 (L1: 0.0507, STFT: 0.2723, Anchor: 0.2400) | Val Loss: 0.1390
+[2025-12-31 23:30:55] INFO: Last checkpoint saved to /home/qhh2237/Projects/BeatAware_R-M2Net/experiments/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced/checkpoints/Exp_a0.05_b1.0_g0.5_Full_Proposed_Balanced_last.pth
+[2025-12-31 23:30:55] INFO: No improvement for 20/20 epochs.
+[2025-12-31 23:30:55] INFO: Early stopping triggered after 20 epochs with no improvement.
+[2025-12-31 23:30:55] INFO: Training Finished Successfully!
