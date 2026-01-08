@@ -113,6 +113,13 @@ def train():
         anchor_from_logits=Config.ANCHOR_FROM_LOGITS,
     ).to(Config.DEVICE)
     
+    # ✅ optimizer 必须无条件定义在这里（进入训练循环之前）
+    optimizer = optim.AdamW(
+        model.parameters(),
+        lr=Config.LEARNING_RATE,
+        weight_decay=Config.WEIGHT_DECAY
+    )
+    
     logger.info(f"Model initialized with {sum(p.numel() for p in model.parameters() if p.requires_grad)} trainable parameters.")
     
     # 🔍  断点续训逻辑 (Resume Logic)
