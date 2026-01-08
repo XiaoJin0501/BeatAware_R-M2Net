@@ -8,6 +8,7 @@ class Config:
     
     # 原始数据路径，需根据实际存放位置修改
     RAW_DATA_DIR = '/home/qhh2237/Datasets/CR_Radar'
+    AW_DATA_DIR = '/home/qhh2237/Datasets/CR_Radar'
     
     # 输出路径依然保持在项目文件夹内，方便管理
     PROCESSED_DATA_DIR = os.path.join(PROJECT_ROOT, 'data_preprocessing', 'processed_to_h5')

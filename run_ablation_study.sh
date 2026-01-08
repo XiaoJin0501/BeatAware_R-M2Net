@@ -10,8 +10,8 @@ set -e
 experiments=(
     "0.0 0.0 0.5 Baseline_L1_Only"
     "0.0 1.0 0.5 L1_plus_Anchor"
-    "0.05 1.0 0.5 Full_Proposed_Balanced"
-    "0.5 1.0 0.5 High_Alpha_Morphology"   # 探索形态极限
+    "0.5 1.0 0.5 Full_Proposed_Balanced"
+    "1.0 1.0 0.5 High_Alpha_Morphology"   # 探索形态极限
     
 )
 

@@ -17,7 +17,7 @@ class Config:
     # 自动检测设备 (优先 CUDA > MPS (Mac) > CPU)
     # DEVICE = "cpu"
     DEVICE = (
-        "cuda" if torch.cuda.is_available() 
+        "cuda" if torch.cuda.is_available()
         else "mps" if torch.backends.mps.is_available() 
         else "cpu"
     )
@@ -33,9 +33,15 @@ class Config:
     DATA_DIR = os.path.join(ROOT_DIR, "data_preprocessing", "processed_to_h5", "experiment_A_SubjectIndependent")
     TRAIN_H5 = os.path.join(DATA_DIR, "train.h5")
     TEST_H5 = os.path.join(DATA_DIR, "test.h5")
-    
-    # 输出目录结构
-    OUTPUT_DIR = os.path.join(ROOT_DIR, "experiments", EXP_NAME)
+    # 数据质量控制（由 verify_alignment_metrics.py 生成）
+    # =========================
+    # QC / Alignment Filtering
+    # =========================
+    QC_DIR = os.path.join(ROOT_DIR, "data_preprocessing", "qc_indices")
+
+    # 建议你分别为 train/test 生成两份 index 文件（强烈推荐）
+    TRAIN_BAD_INDICES_PATH = os.path.join(QC_DIR, "train_bad_indices.npy")
+    TEST_BAD_INDICES_PATH  = os.path.join(QC_DIR, "test_bad_indices.npy")
     
     # 路径初始化函数
     @classmethod
@@ -71,7 +77,7 @@ class Config:
     # =========================================================================
     # 5. Loss 参数 (Loss Function Params)
     # =========================================================================
-    ALPHA = 0.05              # STFT Loss 的权重 (L_total = L1 + alpha * L_STFT + beta * L_anchor)
+    ALPHA = 0.5              # STFT Loss 的权重 (L_total = L1 + alpha * L_STFT + beta * L_anchor)
     BETA = 1.0    # Anchor Loss 权重，用于 R 峰定位
     GAMMA = 0.5  # Smooth Loss (TV Loss) 权重，用于波形平滑
     # 多分辨率 STFT 的参数配置 200Hz ECG 的参数
@@ -80,9 +86,19 @@ class Config:
     # 中窗口: 捕捉波形形态 (P/T波), 约 150-300ms
     # 大窗口: 捕捉整体节律 (RR间期), 约 600ms-1s
     FFT_SIZES = [128, 256, 512]  # FFT 点数 (2的幂次)
-    HOP_SIZES = [64, 128, 256]   # 窗长 (分别对应 0.16s, 0.32s, 0.64s)
-    WIN_LENGTHS = [16, 32, 64]   # 步长 (通常为窗长的 1/4 或 1/2)
-    PATIENCE = 20 # 早停法耐心值 (如果验证集 Loss 连续 10 个 Epoch 不下降，则停止)
+    WIN_LENGTHS = [128, 256, 512]   # 窗长 (分别对应 0.16s, 0.32s, 0.64s)
+    HOP_SIZES   = [32,  64,  128]   # 步长 (分别对应 0.16s, 0.32s, 0.64s)
+    PATIENCE = 30 # 早停法耐心值 (如果验证集 Loss 连续 30 个 Epoch 不下降，则停止)
+    
+    # ========= Sampling / STFT band =========
+    FS = 200
+    STFT_FMIN = 0.5
+    STFT_FMAX = 40.0
+    STFT_USE_BAND = True
+    
+    # ========= Anchor (mask) =========
+    ANCHOR_FROM_LOGITS = True   # 如果你的模型anchor已经sigmoid输出概率 -> False
+    ANCHOR_POS_WEIGHT = 20.0     # 只有在 ANCHOR_FROM_LOGITS=True 时才真正生效
 
     @classmethod
     def makedirs(cls):

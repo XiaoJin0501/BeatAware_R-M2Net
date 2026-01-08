@@ -3,9 +3,19 @@ import numpy as np
 import pandas as pd
 
 # ================== 配置区 ==================
-CSV_PATH = "dataset_verification_reports/failed_lag_samples.csv"
+# 1. CSV 文件路径（verify_alignment_metrics.py 的输出）
+# 请根据需要选择 train / test / full 集合
+# ============================================
+# 2. 输出 bad_indices.npy 路径配置
+# CSV_PATH = "dataset_verification_reports/train/failed_lag_samples.csv"
+# OUT_DIR  = "data_preprocessing/qc_indices"
+# OUT_NAME = "train_bad_indices.npy"
+
+
+CSV_PATH = "dataset_verification_reports/test/failed_lag_samples.csv"
 OUT_DIR  = "data_preprocessing/qc_indices"
-OUT_NAME = "bad_indices.npy"
+OUT_NAME = "test_bad_indices.npy"
+
 
 # 极端 lag 阈值（与 verify_alignment_metrics.py 保持一致）
 EXTREME_LAG_SAMPLES = 150

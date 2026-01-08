@@ -1,83 +1,105 @@
-import torch
+# utils/metrics.py
 import numpy as np
 import neurokit2 as nk
-from scipy.stats import pearsonr
 
-def calculate_metrics(pred, target):
-    """计算基础波形相似度指标"""
-    # 1. 转换为 Numpy并展平为 1D 向量
-    pred = pred.detach().cpu().numpy().reshape(pred.shape[0], -1)
-    target = target.detach().cpu().numpy().reshape(target.shape[0], -1)
-    
-    batch_size = pred.shape[0]
-    batch_mae = []
-    batch_rmse = []
-    batch_pcc = []
-    
-    # 2. 逐样本循环计算，确保指标反映的是每个片段的重构质量
-    for i in range(batch_size):
-        curr_p = pred[i]
-        curr_t = target[i]
-        
-    # 3. MAE & RMSE
-    batch_mae.append(np.mean(np.abs(curr_p - curr_t)))
-    batch_rmse.append(np.sqrt(np.mean((curr_p - curr_t) ** 2)))
-    
-    # 5. 计算 Pearson 相关系数 (核心修正点)
-    # 使用 np.corrcoef 得到相关矩阵，取 [0, 1] 元素
-    # 注意：如果信号是平线（标准差为0），corrcoef 会返回 NaN
-    
-    std_p = np.std(curr_p)
-    std_t = np.std(curr_t)
-    if std_p < 1e-6 or std_t < 1e-6:
+def _to_2d_numpy(x):
+    """Convert torch tensor or numpy to numpy array with shape [B, L]."""
+    if hasattr(x, "detach"):  # torch tensor
+        x = x.detach().cpu().numpy()
+
+    x = np.asarray(x)
+
+    # Accept [L], [B,L], [B,1,L], [B,C,L] (take first channel by default)
+    if x.ndim == 1:
+        x = x[None, :]
+    elif x.ndim == 2:
+        pass
+    elif x.ndim == 3:
+        # [B, 1, L] or [B, C, L]
+        x = x[:, 0, :]
+    else:
+        raise ValueError(f"Unsupported input ndim={x.ndim}, shape={x.shape}")
+
+    return x.astype(np.float64, copy=False)
+
+def calculate_metrics(pred, target, eps=1e-6):
+    """
+    Waveform-level similarity metrics.
+    Returns batch-averaged MAE / RMSE / Pearson / AbsPearson.
+    """
+    pred = _to_2d_numpy(pred)
+    target = _to_2d_numpy(target)
+
+    if pred.shape != target.shape:
+        raise ValueError(f"Shape mismatch: pred{pred.shape} vs target{target.shape}")
+
+    batch_mae, batch_rmse, batch_pcc = [], [], []
+
+    for p, t in zip(pred, target):
+        # MAE / RMSE
+        batch_mae.append(np.mean(np.abs(p - t)))
+        batch_rmse.append(np.sqrt(np.mean((p - t) ** 2)))
+
+        # Pearson (robust)
+        sp = np.std(p)
+        st = np.std(t)
+        if sp < eps or st < eps:
             batch_pcc.append(0.0)
-    else:
-            # np.corrcoef 返回 2x2 矩阵，取第 0 行第 1 列
-            pcc = np.corrcoef(curr_p, curr_t)[0, 1]
-            batch_pcc.append(pcc)
-    
-    
-    
-    
-    if np.std(pred) < 1e-6 or np.std(target) < 1e-6:
-        pcc = 0.0
-    else:
-        pcc = np.corrcoef(pred, target)[0, 1]
-    
-    # 3. 返回 Batch 平均值
+        else:
+            batch_pcc.append(float(np.corrcoef(p, t)[0, 1]))
+
+    pcc_mean = float(np.mean(batch_pcc))
     return {
-        'MAE': np.mean(batch_mae),
-        'RMSE': np.mean(batch_rmse),
-        'Pearson': np.mean(batch_pcc)
+        "MAE": float(np.mean(batch_mae)),
+        "RMSE": float(np.mean(batch_rmse)),
+        "Pearson": pcc_mean,
+        "AbsPearson": float(np.mean(np.abs(batch_pcc))),
     }
 
 def extract_clinical_features_nk(signal, fs=200):
     """
-    [核心新增] 使用 NeuroKit2 提取临床生理指标
+    Extract clinical features using NeuroKit2.
+    Output: HR (bpm), RR (ms), QRS (ms), QT (ms).
     """
+    x = np.asarray(signal, dtype=np.float64).copy()
+    x = np.nan_to_num(x)
+
+    out = {"HR": np.nan, "RR": np.nan, "QRS": np.nan, "QT": np.nan}
+
     try:
-        # 1. 寻峰 (R-peaks)
-        _, rpeaks = nk.ecg_peaks(signal, sampling_rate=fs)
-        
-        # 2. 波形解析 (Delineation): 检测 P, Q, S, T 特征点
-        # method="peak" 比较稳健，适用于重构信号
-        _, waves = nk.ecg_delineate(signal, rpeaks, sampling_rate=fs, method="peak")
-        
-        # 3. 计算基础心率指标
-        r_indices = rpeaks['ECG_R_Peaks']
-        if len(r_indices) < 2:
-            return {"HR": np.nan, "RR": np.nan, "QRS": np.nan, "QT": np.nan}
-        
-        rr_intervals = np.diff(r_indices) * (1000.0 / fs) # 转为 ms
-        rr_mean = np.nanmean(rr_intervals)
-        hr = 60000.0 / rr_mean
-        
-        # 4. 计算细致间期 (QRS & QT)
-        # QRS: S波偏移 - Q波起始; QT: T波偏移 - Q波起始
-        # 注意: 如果信号质量差，nk检测不到某些波形，这里会返回 NaN
-        qrs = np.nanmean(waves['ECG_S_Offsets'] - waves['ECG_Q_Onsets']) * (1000.0 / fs)
-        qt = np.nanmean(waves['ECG_T_Offsets'] - waves['ECG_Q_Onsets']) * (1000.0 / fs)
-        
-        return {"HR": hr, "RR": rr_mean, "QRS": qrs, "QT": qt}
+        _, rpeaks = nk.ecg_peaks(x, sampling_rate=fs)
+        r_idx = np.asarray(rpeaks.get("ECG_R_Peaks", []), dtype=int)
+
+        if r_idx.size < 2:
+            return out
+
+        rr_ms = np.diff(r_idx) * (1000.0 / fs)
+        rr_mean = float(np.nanmean(rr_ms))
+        out["RR"] = rr_mean
+        out["HR"] = float(60000.0 / rr_mean) if rr_mean > 1e-6 else np.nan
+
     except Exception:
-        return {"HR": np.nan, "RR": np.nan, "QRS": np.nan, "QT": np.nan}
+        # HR/RR失败就直接返回（因为后面 delineate 也没有意义）
+        return out
+
+    # QRS/QT：允许失败，不影响 HR/RR
+    try:
+        _, waves = nk.ecg_delineate(x, rpeaks, sampling_rate=fs, method="peak")
+
+        def _safe_interval(a, b):
+            if (a not in waves) or (b not in waves):
+                return np.nan
+            va = np.asarray(waves[a], dtype=np.float64)
+            vb = np.asarray(waves[b], dtype=np.float64)
+            dt = vb - va
+            dt_ms = dt * (1000.0 / fs)
+            v = float(np.nanmean(dt_ms))
+            return v
+
+        out["QRS"] = _safe_interval("ECG_Q_Onsets", "ECG_S_Offsets")
+        out["QT"]  = _safe_interval("ECG_Q_Onsets", "ECG_T_Offsets")
+
+    except Exception:
+        pass
+
+    return out

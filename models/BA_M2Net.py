@@ -58,7 +58,7 @@ class BeatAwareRM2Net(nn.Module):
         # The input for the Anchor Branch must be Radar(x) [B, 1, L].
         anchor_feat = self.anchor_enc(x)  # [B, 32, L]
         # 1. 输出 Mask 预测 (用于 Loss)(使用 Sigmoid 归一化到 0-1)
-        anchor_pred_mask = torch.sigmoid(self.anchor_head(anchor_feat)) # [B, 1, L]
+        anchor_pred_mask = self.anchor_head(anchor_feat)   # logits, NO sigmoid
         
         # 生成 TFiLM 参数
         anchor_vec = self.tfilm_adapter(anchor_feat) # [B, 32]
@@ -75,8 +75,8 @@ class BeatAwareRM2Net(nn.Module):
             # 1: 先过 BN 再做 TFiLM, 这样调制的偏移量不会被 BN 抹掉
             f = bn(f)
             f = f * (1.0 + gamma[:, i]) + beta[:, i] # TFiLM
-            # 2: 激活 ReLU
-            feats.append(F.relu(bn(f)))
+            f = F.relu(f) # 2: 激活 ReLU
+            feats.append(f)
         
         x_enc = torch.cat(feats, dim=1)
 
@@ -88,8 +88,10 @@ class BeatAwareRM2Net(nn.Module):
         x_up = F.relu(self.up1(x_mid))
         x_up = F.relu(self.up2(x_up))
         
-        # The activation function was changed to Sigmoid, which matches the data range [0, 1].
+        
         out = torch.sigmoid(self.final(x_up))
+        # The activation function was changed to Sigmoid, which matches the data range [0, 1].
+        # out = torch.sigmoid(self.final(x_up)) # 在可视化/保存时再 torch.sigmoid 或 clamp(0,1)
     
     # 返回: 重建ECG, 预测Mask
         return out, anchor_pred_mask

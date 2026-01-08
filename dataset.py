@@ -53,7 +53,6 @@ class RadarDataset(Dataset):
             f"  removed_bad  = {0 if self.bad_indices is None else len(self.bad_indices)}"
         )
     
-    
           
     def __len__(self):
         return len(self.indices)

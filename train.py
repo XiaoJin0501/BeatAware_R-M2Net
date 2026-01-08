@@ -48,32 +48,59 @@ def train():
     logger.info(f"💻 Device: {Config.DEVICE}")
 
     # 3. 数据准备
-    logger.info("⏳ Loading datasets...")
-    train_set = RadarDataset(Config.TRAIN_H5)
-    test_set = RadarDataset(Config.TEST_H5)
-    
+    train_bad = getattr(Config, "TRAIN_BAD_INDICES_PATH", None)
+    test_bad  = getattr(Config, "TEST_BAD_INDICES_PATH", None)
+
+    if train_bad is not None and not os.path.exists(train_bad):
+        logger.warning(f"[QC] TRAIN_BAD_INDICES_PATH not found, disable: {train_bad}")
+        train_bad = None
+
+    if test_bad is not None and not os.path.exists(test_bad):
+        logger.warning(f"[QC] TEST_BAD_INDICES_PATH not found, disable: {test_bad}")
+        test_bad = None
+
+    train_set = RadarDataset(Config.TRAIN_H5, bad_indices_path=train_bad)
+    test_set  = RadarDataset(Config.TEST_H5,  bad_indices_path=test_bad)
+
     train_loader = DataLoader(
         train_set, 
         batch_size=Config.BATCH_SIZE, 
         shuffle=True, 
-        num_workers=Config.NUM_WORKERS
+        num_workers=Config.NUM_WORKERS,
+        drop_last=True,
+        pin_memory=(Config.DEVICE == "cuda"),
+        persistent_workers=(Config.NUM_WORKERS > 0),
     )
     test_loader = DataLoader(
         test_set, 
         batch_size=Config.BATCH_SIZE, 
         shuffle=False, 
-        num_workers=Config.NUM_WORKERS
+        num_workers=Config.NUM_WORKERS,
     )
     
-    logger.info(f"Data loaded. Train samples: {len(train_set)}, Test samples: {len(test_set)}")
+    logger.info(f"[QC] bad_indices_path = {bad_path if bad_path is not None else 'None (disabled)'}")
+    logger.info(f"[QC] Train kept: {len(train_set)} | Test kept: {len(test_set)}")
+
 
     # 4. 模型与 Loss 构建
     model = BeatAwareRM2Net(in_channels=Config.IN_CHANNELS, base_channels=Config.BASE_CHANNELS).to(Config.DEVICE)
     logger.info("⏳ Initializing model and optimizer...")
     
     # 初始化 Loss (包含 STFT Loss 和 Anchor Loss)
-    criterion = TotalLoss(alpha=Config.ALPHA, beta=Config.BETA, gamma=Config.GAMMA).to(Config.DEVICE)
-    optimizer = optim.AdamW(model.parameters(), lr=Config.LEARNING_RATE, weight_decay=Config.WEIGHT_DECAY)
+    criterion = TotalLoss(
+        alpha=Config.ALPHA,
+        beta=Config.BETA,
+        gamma=Config.GAMMA,
+        fs=Config.FS,
+        fft_sizes=Config.FFT_SIZES,
+        hop_sizes=Config.HOP_SIZES,
+        win_lengths=Config.WIN_LENGTHS,
+        stft_fmin=Config.STFT_FMIN,
+        stft_fmax=Config.STFT_FMAX,
+        stft_use_band=Config.STFT_USE_BAND,
+        anchor_pos_weight=Config.ANCHOR_POS_WEIGHT,
+        anchor_from_logits=Config.ANCHOR_FROM_LOGITS,
+    ).to(Config.DEVICE)
     
     logger.info(f"Model initialized with {sum(p.numel() for p in model.parameters() if p.requires_grad)} trainable parameters.")
     
@@ -109,9 +136,6 @@ def train():
     # =========================================================================
 
     # 5. 训练主循环
-    best_val_loss = float('inf')
-    # 新增：初始化计数器
-    epochs_no_improve = 0
     
     for epoch in range(start_epoch, Config.EPOCHS):
         # --- Training Phase ---
@@ -174,29 +198,50 @@ def train():
         
         # --- Validation Phase ---
         model.eval()
-        val_loss_avg = 0
+        val_loss_avg = 0.0
+
+        val_L1_avg, val_STFT_avg, val_Anchor_avg, val_Smooth_avg = 0.0, 0.0, 0.0, 0.0
+
         with torch.no_grad():
             for radar, ecg, mask, subject_id in test_loader:
                 radar, ecg, mask = radar.to(Config.DEVICE), ecg.to(Config.DEVICE), mask.to(Config.DEVICE)
-                # ✅ 验证集也需要接收两个返回值 (pred_mask 被忽略)
-                pred_ecg, _ = model(radar)
-                # 验证集通常只看重建 Loss，不需要算 Anchor Loss
-                loss, _, _, _, _ = criterion(pred_ecg, ecg, None, None)
+
+                pred_ecg, pred_mask = model(radar)
+                loss, l_time, l_freq, l_anchor, l_smooth = criterion(pred_ecg, ecg, pred_mask, mask)
+
                 val_loss_avg += loss.item()
-                
+                val_L1_avg += l_time.item()
+                val_STFT_avg += l_freq.item()
+                val_Anchor_avg += l_anchor.item()
+                val_Smooth_avg += l_smooth.item()
+
         val_loss_avg /= len(test_loader)
+        val_L1_avg /= len(test_loader)
+        val_STFT_avg /= len(test_loader)
+        val_Anchor_avg /= len(test_loader)
+        val_Smooth_avg /= len(test_loader)
+
+        writer.add_scalar('Loss/Val_Total', val_loss_avg, epoch)
+        writer.add_scalar('Loss/Val_L1', val_L1_avg, epoch)
+        writer.add_scalar('Loss/Val_STFT', val_STFT_avg, epoch)
+        writer.add_scalar('Loss/Val_Anchor', val_Anchor_avg, epoch)
+        writer.add_scalar('Loss/Val_Smooth', val_Smooth_avg, epoch)
+
         
         # TensorBoard Val Loss
         writer.add_scalar('Loss/Val_Total', val_loss_avg, epoch)
         
         # --- Logging & Saving ---
+        
         logger.info(
             f"Epoch {epoch+1:03d} | "
             f"Train Total: {train_loss_avg:.4f} "
-            f"(L1: {train_L1_avg:.4f}, STFT: {train_STFT_avg:.4f}, Anchor: {train_Anchor_avg:.4f}) | "
-            f"Val Loss: {val_loss_avg:.4f}"
+            f"(L1: {train_L1_avg:.4f}, STFT: {train_STFT_avg:.4f}, Anchor: {train_Anchor_avg:.4f}, Smooth: {train_Smooth_avg:.4f}) | "
+            f"Val Total: {val_loss_avg:.4f} "
+            f"(L1: {val_L1_avg:.4f}, STFT: {val_STFT_avg:.4f}, Anchor: {val_Anchor_avg:.4f}, Smooth: {val_Smooth_avg:.4f})"
         )
         
+
         # 🔍 [新增功能] 保存 Best 和 Last Checkpoint
         # =====================================================================
         

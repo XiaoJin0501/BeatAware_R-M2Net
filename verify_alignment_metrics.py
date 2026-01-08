@@ -10,7 +10,7 @@ from scipy.signal import find_peaks
 
 
 # ================== 配置区 ==================
-H5_PATH = "data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent/train.h5"
+H5_PATH = "data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent/test.h5"
 FS = 200
 
 # 你生成该 H5 时的滑窗参数（用于 effective unique windows 折算）
@@ -40,7 +40,7 @@ ECG_MIN_PEAK_DIST = int(round(ECG_MIN_PEAK_DIST_SEC * FS))
 ECG_PROM_FRAC = 0.15
 
 # 5) 输出目录
-OUT_DIR = "dataset_verification_reports"
+OUT_DIR = "dataset_verification_reports/test"
 # ============================================
 
 

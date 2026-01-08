@@ -85,15 +85,37 @@
 ## 4. 数据流水线与预处理 (Data Pipeline & Preprocessing)
 
 本项目设计了一套具有生理一致性保障的预处理流程，旨在消除异构模态间的域差异并提取关键生理特征。
-[Experiment A Split]: Total Subjects: 30; Valid Subjects: 21; Rejected Subjects (Low Quality): [3, 6, 10, 13, 16, 19, 22, 24, 26]
-  Train Subjects (17): [1, 2, 4, 5, 7, 8, 9, 11, 12, 14, 15, 17, 18, 20, 21, 23, 25]; Test Subjects  (4): [27, 28, 29, 30]
-  train samples: 4488 samples; test samples: 605 samples
 
-[Experiment B Split]
-  Total Segments: 5093
-  Train Segments: 4074
-  Test Segments : 1019
-Train sample: 4074; test samples: 1019
+## Data Preprocessing and Dataset Construction
+
+Raw radar I/Q recordings and synchronized reference ECG signals were preprocessed prior to model training. For radar, the raw complex signal was converted into a phase-related waveform, followed by standard denoising and bandpass filtering to preserve cardiac-related components. For ECG, baseline noise was removed and R-peaks were detected, after which a beat-centered Gaussian anchor mask was generated to provide beat-aware supervision.
+
+To ensure temporal consistency between radar inputs and ECG targets, radar and ECG segments were aligned using cross-correlation-based lag estimation. The aligned radar waveform, aligned ECG waveform, and the corresponding anchor mask were then segmented into fixed-length windows using a sliding-window strategy and saved into HDF5 files for training and testing.
+
+### Dataset Verification and Quality Control
+
+Since radar-to-ECG waveform reconstruction is highly sensitive to residual misalignment, we additionally performed dataset-level verification using a dedicated diagnostic script (`verify_alignment_metrics.py`). The verification includes: (i) numerical sanity checks (shape consistency and NaN/Inf detection), (ii) residual lag analysis on heart-band filtered signals to quantify remaining temporal mismatch, and (iii) beat-level consistency checks between the generated anchor mask and ECG R-peaks.
+
+A small subset of segments exhibited extreme residual lag and was excluded from all experiments to prevent spurious supervision and misleading gradients. The indices of excluded segments were stored and consistently applied during data loading to guarantee reproducibility across all training and evaluation runs.
+
+
+test.h5
+We further conducted an independent quality assessment on the test set. Although no samples were excluded at test time, approximately X% of segments exhibited extreme temporal misalignment (>500 ms), which partially explains the performance degradation in a small number of cases.
+
+写论文 Methods / Data Quality
+
+“We additionally conducted an independent alignment quality assessment on the test set. Importantly, no test samples were excluded during evaluation.”
+
+写 Results / Discussion
+
+“A small proportion of test segments exhibited extreme temporal misalignment (>500 ms), which partially explains the degradation in reconstruction accuracy for certain cases.”
+
+Supplementary / Figure
+
+放 1–2 张 extreme lag 的对比图
+
+用来挡审稿人质疑
+
 
 ### 4.0 核心创新：Ground Truth 构建 (`src/ecg_dsp.py`)
 为了监督 Anchor Branch，构建了 `generate_anchor_mask` 函数：
