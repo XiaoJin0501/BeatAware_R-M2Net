@@ -35,16 +35,6 @@ def train():
     Config.update_paths(new_name)
     Config.makedirs()
     # =========================================================================
-    # =========================
-    # QC: bad indices (train)
-    # =========================
-    bad_path = getattr(Config, "TRAIN_BAD_INDICES_PATH", None)
-    if bad_path is not None and not os.path.exists(bad_path):
-        logger.warning(f"[QC] TRAIN_BAD_INDICES_PATH not found, disable QC filtering: {bad_path}")
-        bad_path = None
-
-    logger.info(f"[QC] TRAIN_BAD_INDICES_PATH = {bad_path if bad_path is not None else 'None (disabled)'}")
-
     
     # 1. 固定随机种子 
     seed_everything(Config.SEED)
@@ -56,6 +46,17 @@ def train():
     logger.info(f"📊 Hyperparams: Alpha={Config.ALPHA}, Beta={Config.BETA}")
     logger.info(f"📂 Data Directory: {Config.DATA_DIR}")
     logger.info(f"💻 Device: {Config.DEVICE}")
+    
+    # =========================
+    # QC: bad indices (train)
+    # =========================
+    bad_path = getattr(Config, "TRAIN_BAD_INDICES_PATH", None)
+    if bad_path is not None and not os.path.exists(bad_path):
+        logger.warning(f"[QC] TRAIN_BAD_INDICES_PATH not found, disable QC filtering: {bad_path}")
+        bad_path = None
+
+    logger.info(f"[QC] TRAIN_BAD_INDICES_PATH = {bad_path if bad_path is not None else 'None (disabled)'}")
+
 
     # 3. 数据准备
     train_bad = getattr(Config, "TRAIN_BAD_INDICES_PATH", None)
