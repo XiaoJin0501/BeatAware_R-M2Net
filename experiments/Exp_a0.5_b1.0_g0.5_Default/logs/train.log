@@ -1,0 +1,4 @@
+[2026-01-08 20:28:18] INFO: 🚀 Experiment Started: Exp_a0.5_b1.0_g0.5_Default
+[2026-01-08 20:28:18] INFO: 📊 Hyperparams: Alpha=0.5, Beta=1.0
+[2026-01-08 20:28:18] INFO: 📂 Data Directory: /root/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2026-01-08 20:28:18] INFO: 💻 Device: cuda
