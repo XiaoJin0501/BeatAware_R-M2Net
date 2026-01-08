@@ -63,7 +63,7 @@ class Config:
     # 4. 训练超参数 (Training Hyperparameters)
     # =========================================================================
     
-    BATCH_SIZE = 32 # 显存不够可调小 (e.g., 16)
+    BATCH_SIZE = 64 # 显存不够可调小 (e.g., 16)
     
     # BATCH_SIZE = 1
     EPOCHS = 150
