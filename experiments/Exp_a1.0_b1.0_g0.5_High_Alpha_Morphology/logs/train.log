@@ -1,0 +1,108 @@
+[2026-01-09 01:51:28] INFO: 🚀 Experiment Started: Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology
+[2026-01-09 01:51:28] INFO: 📊 Hyperparams: Alpha=1.0, Beta=1.0
+[2026-01-09 01:51:28] INFO: 📂 Data Directory: /root/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2026-01-09 01:51:28] INFO: 💻 Device: cuda
+[2026-01-09 01:51:28] INFO: [QC] TRAIN_BAD_INDICES_PATH = /root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/train_bad_indices.npy
+[2026-01-09 01:51:28] INFO: [QC] bad_indices_path = /root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/train_bad_indices.npy
+[2026-01-09 01:51:28] INFO: [QC] Train kept: 2922 | Test kept: 1161
+[2026-01-09 01:51:28] INFO: ⏳ Initializing model and optimizer...
+[2026-01-09 01:51:29] INFO: Model initialized with 403202 trainable parameters.
+[2026-01-09 01:51:29] INFO: No checkpoint found. Starting fresh training.
+[2026-01-09 01:54:14] INFO: Epoch 001 | Train Total: 2.4520 (L1: 0.1954, STFT: 0.6897, Anchor: 1.5548, Smooth: 0.0244) | Val Total: 2.1719 (L1: 0.1214, STFT: 0.4936, Anchor: 1.5468, Smooth: 0.0202)
+[2026-01-09 01:54:14] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 01:54:14] INFO: Best model saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_best.pth
+[2026-01-09 01:56:58] INFO: Epoch 002 | Train Total: 2.1933 (L1: 0.1472, STFT: 0.5107, Anchor: 1.5248, Smooth: 0.0209) | Val Total: 2.1683 (L1: 0.1163, STFT: 0.4798, Anchor: 1.5643, Smooth: 0.0160)
+[2026-01-09 01:56:58] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 01:56:58] INFO: Best model saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_best.pth
+[2026-01-09 01:59:42] INFO: Epoch 003 | Train Total: 2.1109 (L1: 0.1324, STFT: 0.4690, Anchor: 1.4994, Smooth: 0.0201) | Val Total: 2.1753 (L1: 0.1078, STFT: 0.4719, Anchor: 1.5864, Smooth: 0.0185)
+[2026-01-09 01:59:42] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 01:59:42] INFO: No improvement for 1/30 epochs.
+[2026-01-09 02:02:27] INFO: Epoch 004 | Train Total: 2.0229 (L1: 0.1129, STFT: 0.4193, Anchor: 1.4806, Smooth: 0.0203) | Val Total: 2.2041 (L1: 0.1153, STFT: 0.4730, Anchor: 1.6059, Smooth: 0.0197)
+[2026-01-09 02:02:27] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:02:27] INFO: No improvement for 2/30 epochs.
+[2026-01-09 02:05:09] INFO: Epoch 005 | Train Total: 1.9581 (L1: 0.1021, STFT: 0.3778, Anchor: 1.4680, Smooth: 0.0206) | Val Total: 2.2554 (L1: 0.1262, STFT: 0.4990, Anchor: 1.6213, Smooth: 0.0179)
+[2026-01-09 02:05:09] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:05:09] INFO: No improvement for 3/30 epochs.
+[2026-01-09 02:07:48] INFO: Epoch 006 | Train Total: 1.9110 (L1: 0.0943, STFT: 0.3492, Anchor: 1.4570, Smooth: 0.0208) | Val Total: 2.2680 (L1: 0.1318, STFT: 0.4914, Anchor: 1.6362, Smooth: 0.0171)
+[2026-01-09 02:07:49] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:07:49] INFO: No improvement for 4/30 epochs.
+[2026-01-09 02:10:35] INFO: Epoch 007 | Train Total: 1.8768 (L1: 0.0892, STFT: 0.3285, Anchor: 1.4486, Smooth: 0.0212) | Val Total: 2.2318 (L1: 0.1192, STFT: 0.4546, Anchor: 1.6492, Smooth: 0.0175)
+[2026-01-09 02:10:35] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:10:35] INFO: No improvement for 5/30 epochs.
+[2026-01-09 02:13:22] INFO: Epoch 008 | Train Total: 1.8538 (L1: 0.0861, STFT: 0.3147, Anchor: 1.4422, Smooth: 0.0214) | Val Total: 2.2172 (L1: 0.1113, STFT: 0.4378, Anchor: 1.6593, Smooth: 0.0175)
+[2026-01-09 02:13:22] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:13:22] INFO: No improvement for 6/30 epochs.
+[2026-01-09 02:16:08] INFO: Epoch 009 | Train Total: 1.8364 (L1: 0.0837, STFT: 0.3047, Anchor: 1.4373, Smooth: 0.0214) | Val Total: 2.3034 (L1: 0.1356, STFT: 0.4942, Anchor: 1.6655, Smooth: 0.0161)
+[2026-01-09 02:16:08] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:16:08] INFO: No improvement for 7/30 epochs.
+[2026-01-09 02:18:54] INFO: Epoch 010 | Train Total: 1.8185 (L1: 0.0809, STFT: 0.2929, Anchor: 1.4339, Smooth: 0.0215) | Val Total: 2.2975 (L1: 0.1293, STFT: 0.4863, Anchor: 1.6739, Smooth: 0.0161)
+[2026-01-09 02:18:54] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:18:54] INFO: No improvement for 8/30 epochs.
+[2026-01-09 02:21:35] INFO: Epoch 011 | Train Total: 1.8037 (L1: 0.0790, STFT: 0.2831, Anchor: 1.4308, Smooth: 0.0215) | Val Total: 2.2616 (L1: 0.1191, STFT: 0.4552, Anchor: 1.6788, Smooth: 0.0169)
+[2026-01-09 02:21:35] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:21:35] INFO: No improvement for 9/30 epochs.
+[2026-01-09 02:24:22] INFO: Epoch 012 | Train Total: 1.7893 (L1: 0.0771, STFT: 0.2727, Anchor: 1.4287, Smooth: 0.0215) | Val Total: 2.2510 (L1: 0.1165, STFT: 0.4437, Anchor: 1.6824, Smooth: 0.0170)
+[2026-01-09 02:24:22] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:24:22] INFO: No improvement for 10/30 epochs.
+[2026-01-09 02:27:06] INFO: Epoch 013 | Train Total: 1.7768 (L1: 0.0758, STFT: 0.2639, Anchor: 1.4264, Smooth: 0.0214) | Val Total: 2.2737 (L1: 0.1276, STFT: 0.4518, Anchor: 1.6862, Smooth: 0.0162)
+[2026-01-09 02:27:06] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:27:06] INFO: No improvement for 11/30 epochs.
+[2026-01-09 02:29:51] INFO: Epoch 014 | Train Total: 1.7685 (L1: 0.0751, STFT: 0.2567, Anchor: 1.4260, Smooth: 0.0212) | Val Total: 2.2534 (L1: 0.1249, STFT: 0.4334, Anchor: 1.6869, Smooth: 0.0164)
+[2026-01-09 02:29:51] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:29:51] INFO: No improvement for 12/30 epochs.
+[2026-01-09 02:32:37] INFO: Epoch 015 | Train Total: 1.7567 (L1: 0.0730, STFT: 0.2478, Anchor: 1.4255, Smooth: 0.0209) | Val Total: 2.2903 (L1: 0.1378, STFT: 0.4574, Anchor: 1.6873, Smooth: 0.0154)
+[2026-01-09 02:32:37] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:32:37] INFO: No improvement for 13/30 epochs.
+[2026-01-09 02:35:22] INFO: Epoch 016 | Train Total: 1.7493 (L1: 0.0722, STFT: 0.2428, Anchor: 1.4239, Smooth: 0.0206) | Val Total: 2.2448 (L1: 0.1267, STFT: 0.4207, Anchor: 1.6891, Smooth: 0.0166)
+[2026-01-09 02:35:22] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:35:22] INFO: No improvement for 14/30 epochs.
+[2026-01-09 02:38:06] INFO: Epoch 017 | Train Total: 1.7404 (L1: 0.0708, STFT: 0.2361, Anchor: 1.4233, Smooth: 0.0203) | Val Total: 2.2998 (L1: 0.1433, STFT: 0.4598, Anchor: 1.6889, Smooth: 0.0156)
+[2026-01-09 02:38:06] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:38:06] INFO: No improvement for 15/30 epochs.
+[2026-01-09 02:40:51] INFO: Epoch 018 | Train Total: 1.7347 (L1: 0.0706, STFT: 0.2318, Anchor: 1.4223, Smooth: 0.0200) | Val Total: 2.2237 (L1: 0.1166, STFT: 0.4060, Anchor: 1.6931, Smooth: 0.0159)
+[2026-01-09 02:40:51] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:40:51] INFO: No improvement for 16/30 epochs.
+[2026-01-09 02:43:34] INFO: Epoch 019 | Train Total: 1.7266 (L1: 0.0690, STFT: 0.2258, Anchor: 1.4218, Smooth: 0.0199) | Val Total: 2.2375 (L1: 0.1216, STFT: 0.4110, Anchor: 1.6971, Smooth: 0.0155)
+[2026-01-09 02:43:34] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:43:34] INFO: No improvement for 17/30 epochs.
+[2026-01-09 02:46:19] INFO: Epoch 020 | Train Total: 1.7223 (L1: 0.0683, STFT: 0.2221, Anchor: 1.4221, Smooth: 0.0198) | Val Total: 2.2185 (L1: 0.1180, STFT: 0.3997, Anchor: 1.6928, Smooth: 0.0160)
+[2026-01-09 02:46:20] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:46:20] INFO: No improvement for 18/30 epochs.
+[2026-01-09 02:49:06] INFO: Epoch 021 | Train Total: 1.7181 (L1: 0.0679, STFT: 0.2190, Anchor: 1.4214, Smooth: 0.0197) | Val Total: 2.2668 (L1: 0.1340, STFT: 0.4316, Anchor: 1.6936, Smooth: 0.0152)
+[2026-01-09 02:49:07] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:49:07] INFO: No improvement for 19/30 epochs.
+[2026-01-09 02:51:54] INFO: Epoch 022 | Train Total: 1.7110 (L1: 0.0668, STFT: 0.2142, Anchor: 1.4201, Smooth: 0.0197) | Val Total: 2.2352 (L1: 0.1225, STFT: 0.4079, Anchor: 1.6969, Smooth: 0.0159)
+[2026-01-09 02:51:54] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:51:54] INFO: No improvement for 20/30 epochs.
+[2026-01-09 02:54:40] INFO: Epoch 023 | Train Total: 1.7078 (L1: 0.0666, STFT: 0.2116, Anchor: 1.4198, Smooth: 0.0196) | Val Total: 2.2243 (L1: 0.1182, STFT: 0.4011, Anchor: 1.6972, Smooth: 0.0157)
+[2026-01-09 02:54:40] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:54:40] INFO: No improvement for 21/30 epochs.
+[2026-01-09 02:57:20] INFO: Epoch 024 | Train Total: 1.7044 (L1: 0.0659, STFT: 0.2093, Anchor: 1.4194, Smooth: 0.0196) | Val Total: 2.2273 (L1: 0.1179, STFT: 0.4039, Anchor: 1.6976, Smooth: 0.0158)
+[2026-01-09 02:57:20] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 02:57:20] INFO: No improvement for 22/30 epochs.
+[2026-01-09 03:00:06] INFO: Epoch 025 | Train Total: 1.7013 (L1: 0.0653, STFT: 0.2070, Anchor: 1.4193, Smooth: 0.0195) | Val Total: 2.2076 (L1: 0.1172, STFT: 0.3873, Anchor: 1.6948, Smooth: 0.0166)
+[2026-01-09 03:00:06] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 03:00:06] INFO: No improvement for 23/30 epochs.
+[2026-01-09 03:02:51] INFO: Epoch 026 | Train Total: 1.6988 (L1: 0.0651, STFT: 0.2046, Anchor: 1.4193, Smooth: 0.0195) | Val Total: 2.2355 (L1: 0.1228, STFT: 0.4103, Anchor: 1.6946, Smooth: 0.0156)
+[2026-01-09 03:02:51] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 03:02:51] INFO: No improvement for 24/30 epochs.
+[2026-01-09 03:05:33] INFO: Epoch 027 | Train Total: 1.6932 (L1: 0.0641, STFT: 0.2006, Anchor: 1.4188, Smooth: 0.0195) | Val Total: 2.2494 (L1: 0.1276, STFT: 0.4168, Anchor: 1.6974, Smooth: 0.0152)
+[2026-01-09 03:05:33] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 03:05:33] INFO: No improvement for 25/30 epochs.
+[2026-01-09 03:08:19] INFO: Epoch 028 | Train Total: 1.6902 (L1: 0.0637, STFT: 0.1988, Anchor: 1.4179, Smooth: 0.0194) | Val Total: 2.2109 (L1: 0.1172, STFT: 0.3891, Anchor: 1.6965, Smooth: 0.0163)
+[2026-01-09 03:08:19] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 03:08:19] INFO: No improvement for 26/30 epochs.
+[2026-01-09 03:11:09] INFO: Epoch 029 | Train Total: 1.6881 (L1: 0.0635, STFT: 0.1975, Anchor: 1.4174, Smooth: 0.0193) | Val Total: 2.2433 (L1: 0.1276, STFT: 0.4094, Anchor: 1.6982, Smooth: 0.0161)
+[2026-01-09 03:11:09] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 03:11:09] INFO: No improvement for 27/30 epochs.
+[2026-01-09 03:13:56] INFO: Epoch 030 | Train Total: 1.6860 (L1: 0.0631, STFT: 0.1961, Anchor: 1.4171, Smooth: 0.0193) | Val Total: 2.2327 (L1: 0.1219, STFT: 0.4066, Anchor: 1.6967, Smooth: 0.0151)
+[2026-01-09 03:13:57] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 03:13:57] INFO: No improvement for 28/30 epochs.
+[2026-01-09 03:16:41] INFO: Epoch 031 | Train Total: 1.6822 (L1: 0.0624, STFT: 0.1934, Anchor: 1.4168, Smooth: 0.0192) | Val Total: 2.2116 (L1: 0.1174, STFT: 0.3880, Anchor: 1.6982, Smooth: 0.0163)
+[2026-01-09 03:16:41] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 03:16:41] INFO: No improvement for 29/30 epochs.
+[2026-01-09 03:19:26] INFO: Epoch 032 | Train Total: 1.6780 (L1: 0.0620, STFT: 0.1908, Anchor: 1.4157, Smooth: 0.0192) | Val Total: 2.2126 (L1: 0.1192, STFT: 0.3886, Anchor: 1.6965, Smooth: 0.0167)
+[2026-01-09 03:19:26] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_last.pth
+[2026-01-09 03:19:26] INFO: No improvement for 30/30 epochs.
+[2026-01-09 03:19:26] INFO: Early stopping triggered after 30 epochs with no improvement.
+[2026-01-09 03:19:26] INFO: Training Finished Successfully!

@@ -1,0 +1,108 @@
+[2026-01-08 22:41:35] INFO: 🚀 Experiment Started: Exp_a0.0_b1.0_g0.5_L1_plus_Anchor
+[2026-01-08 22:41:35] INFO: 📊 Hyperparams: Alpha=0.0, Beta=1.0
+[2026-01-08 22:41:35] INFO: 📂 Data Directory: /root/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2026-01-08 22:41:35] INFO: 💻 Device: cuda
+[2026-01-08 22:41:35] INFO: [QC] TRAIN_BAD_INDICES_PATH = /root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/train_bad_indices.npy
+[2026-01-08 22:41:35] INFO: [QC] bad_indices_path = /root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/train_bad_indices.npy
+[2026-01-08 22:41:35] INFO: [QC] Train kept: 2922 | Test kept: 1161
+[2026-01-08 22:41:36] INFO: ⏳ Initializing model and optimizer...
+[2026-01-08 22:41:37] INFO: Model initialized with 403202 trainable parameters.
+[2026-01-08 22:41:37] INFO: No checkpoint found. Starting fresh training.
+[2026-01-08 22:44:23] INFO: Epoch 001 | Train Total: 1.7473 (L1: 0.1874, STFT: 0.7593, Anchor: 1.5548, Smooth: 0.0103) | Val Total: 1.6739 (L1: 0.1228, STFT: 0.5572, Anchor: 1.5466, Smooth: 0.0090)
+[2026-01-08 22:44:23] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 22:44:23] INFO: Best model saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_best.pth
+[2026-01-08 22:47:07] INFO: Epoch 002 | Train Total: 1.6665 (L1: 0.1368, STFT: 0.5979, Anchor: 1.5246, Smooth: 0.0101) | Val Total: 1.6578 (L1: 0.0883, STFT: 0.5070, Anchor: 1.5643, Smooth: 0.0105)
+[2026-01-08 22:47:07] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 22:47:07] INFO: Best model saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_best.pth
+[2026-01-08 22:49:52] INFO: Epoch 003 | Train Total: 1.6103 (L1: 0.1071, STFT: 0.5522, Anchor: 1.4984, Smooth: 0.0096) | Val Total: 1.6902 (L1: 0.0977, STFT: 0.5238, Anchor: 1.5877, Smooth: 0.0097)
+[2026-01-08 22:49:52] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 22:49:52] INFO: No improvement for 1/30 epochs.
+[2026-01-08 22:52:35] INFO: Epoch 004 | Train Total: 1.5788 (L1: 0.0953, STFT: 0.5397, Anchor: 1.4792, Smooth: 0.0087) | Val Total: 1.7107 (L1: 0.0986, STFT: 0.5370, Anchor: 1.6075, Smooth: 0.0093)
+[2026-01-08 22:52:35] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 22:52:35] INFO: No improvement for 2/30 epochs.
+[2026-01-08 22:55:17] INFO: Epoch 005 | Train Total: 1.5583 (L1: 0.0874, STFT: 0.5223, Anchor: 1.4666, Smooth: 0.0087) | Val Total: 1.7415 (L1: 0.1143, STFT: 0.5580, Anchor: 1.6227, Smooth: 0.0089)
+[2026-01-08 22:55:17] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 22:55:17] INFO: No improvement for 3/30 epochs.
+[2026-01-08 22:58:00] INFO: Epoch 006 | Train Total: 1.5405 (L1: 0.0805, STFT: 0.5041, Anchor: 1.4555, Smooth: 0.0089) | Val Total: 1.7703 (L1: 0.1273, STFT: 0.5730, Anchor: 1.6387, Smooth: 0.0086)
+[2026-01-08 22:58:00] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 22:58:00] INFO: No improvement for 4/30 epochs.
+[2026-01-08 23:00:41] INFO: Epoch 007 | Train Total: 1.5284 (L1: 0.0769, STFT: 0.4910, Anchor: 1.4470, Smooth: 0.0089) | Val Total: 1.7720 (L1: 0.1157, STFT: 0.5537, Anchor: 1.6518, Smooth: 0.0091)
+[2026-01-08 23:00:41] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:00:41] INFO: No improvement for 5/30 epochs.
+[2026-01-08 23:03:23] INFO: Epoch 008 | Train Total: 1.5199 (L1: 0.0746, STFT: 0.4798, Anchor: 1.4408, Smooth: 0.0090) | Val Total: 1.7877 (L1: 0.1202, STFT: 0.5695, Anchor: 1.6629, Smooth: 0.0092)
+[2026-01-08 23:03:23] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:03:23] INFO: No improvement for 6/30 epochs.
+[2026-01-08 23:06:05] INFO: Epoch 009 | Train Total: 1.5131 (L1: 0.0728, STFT: 0.4696, Anchor: 1.4358, Smooth: 0.0091) | Val Total: 1.7856 (L1: 0.1108, STFT: 0.5436, Anchor: 1.6702, Smooth: 0.0091)
+[2026-01-08 23:06:05] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:06:05] INFO: No improvement for 7/30 epochs.
+[2026-01-08 23:08:47] INFO: Epoch 010 | Train Total: 1.5076 (L1: 0.0707, STFT: 0.4619, Anchor: 1.4324, Smooth: 0.0091) | Val Total: 1.7990 (L1: 0.1164, STFT: 0.5472, Anchor: 1.6781, Smooth: 0.0088)
+[2026-01-08 23:08:47] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:08:47] INFO: No improvement for 8/30 epochs.
+[2026-01-08 23:11:28] INFO: Epoch 011 | Train Total: 1.5030 (L1: 0.0691, STFT: 0.4550, Anchor: 1.4293, Smooth: 0.0091) | Val Total: 1.8106 (L1: 0.1236, STFT: 0.5546, Anchor: 1.6827, Smooth: 0.0085)
+[2026-01-08 23:11:28] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:11:28] INFO: No improvement for 9/30 epochs.
+[2026-01-08 23:14:10] INFO: Epoch 012 | Train Total: 1.4989 (L1: 0.0670, STFT: 0.4479, Anchor: 1.4273, Smooth: 0.0092) | Val Total: 1.8004 (L1: 0.1105, STFT: 0.5418, Anchor: 1.6855, Smooth: 0.0089)
+[2026-01-08 23:14:11] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:14:11] INFO: No improvement for 10/30 epochs.
+[2026-01-08 23:16:52] INFO: Epoch 013 | Train Total: 1.4956 (L1: 0.0659, STFT: 0.4426, Anchor: 1.4251, Smooth: 0.0092) | Val Total: 1.8150 (L1: 0.1212, STFT: 0.5477, Anchor: 1.6896, Smooth: 0.0084)
+[2026-01-08 23:16:53] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:16:53] INFO: No improvement for 11/30 epochs.
+[2026-01-08 23:19:35] INFO: Epoch 014 | Train Total: 1.4945 (L1: 0.0651, STFT: 0.4392, Anchor: 1.4248, Smooth: 0.0092) | Val Total: 1.8083 (L1: 0.1140, STFT: 0.5403, Anchor: 1.6901, Smooth: 0.0084)
+[2026-01-08 23:19:35] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:19:35] INFO: No improvement for 12/30 epochs.
+[2026-01-08 23:22:16] INFO: Epoch 015 | Train Total: 1.4927 (L1: 0.0637, STFT: 0.4339, Anchor: 1.4243, Smooth: 0.0092) | Val Total: 1.8079 (L1: 0.1139, STFT: 0.5369, Anchor: 1.6899, Smooth: 0.0082)
+[2026-01-08 23:22:16] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:22:16] INFO: No improvement for 13/30 epochs.
+[2026-01-08 23:24:59] INFO: Epoch 016 | Train Total: 1.4920 (L1: 0.0645, STFT: 0.4334, Anchor: 1.4229, Smooth: 0.0092) | Val Total: 1.8121 (L1: 0.1165, STFT: 0.5411, Anchor: 1.6917, Smooth: 0.0080)
+[2026-01-08 23:24:59] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:24:59] INFO: No improvement for 14/30 epochs.
+[2026-01-08 23:27:41] INFO: Epoch 017 | Train Total: 1.4901 (L1: 0.0632, STFT: 0.4301, Anchor: 1.4223, Smooth: 0.0092) | Val Total: 1.8169 (L1: 0.1213, STFT: 0.5437, Anchor: 1.6919, Smooth: 0.0075)
+[2026-01-08 23:27:41] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:27:41] INFO: No improvement for 15/30 epochs.
+[2026-01-08 23:30:23] INFO: Epoch 018 | Train Total: 1.4887 (L1: 0.0628, STFT: 0.4280, Anchor: 1.4214, Smooth: 0.0092) | Val Total: 1.8059 (L1: 0.1057, STFT: 0.5258, Anchor: 1.6963, Smooth: 0.0079)
+[2026-01-08 23:30:23] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:30:23] INFO: No improvement for 16/30 epochs.
+[2026-01-08 23:33:10] INFO: Epoch 019 | Train Total: 1.4866 (L1: 0.0612, STFT: 0.4243, Anchor: 1.4208, Smooth: 0.0092) | Val Total: 1.8147 (L1: 0.1102, STFT: 0.5301, Anchor: 1.7006, Smooth: 0.0079)
+[2026-01-08 23:33:10] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:33:10] INFO: No improvement for 17/30 epochs.
+[2026-01-08 23:35:55] INFO: Epoch 020 | Train Total: 1.4860 (L1: 0.0603, STFT: 0.4221, Anchor: 1.4211, Smooth: 0.0092) | Val Total: 1.8158 (L1: 0.1168, STFT: 0.5398, Anchor: 1.6951, Smooth: 0.0077)
+[2026-01-08 23:35:55] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:35:55] INFO: No improvement for 18/30 epochs.
+[2026-01-08 23:38:39] INFO: Epoch 021 | Train Total: 1.4846 (L1: 0.0596, STFT: 0.4196, Anchor: 1.4203, Smooth: 0.0092) | Val Total: 1.8067 (L1: 0.1067, STFT: 0.5280, Anchor: 1.6962, Smooth: 0.0076)
+[2026-01-08 23:38:39] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:38:39] INFO: No improvement for 19/30 epochs.
+[2026-01-08 23:41:23] INFO: Epoch 022 | Train Total: 1.4830 (L1: 0.0593, STFT: 0.4174, Anchor: 1.4191, Smooth: 0.0092) | Val Total: 1.8042 (L1: 0.1037, STFT: 0.5197, Anchor: 1.6965, Smooth: 0.0079)
+[2026-01-08 23:41:23] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:41:23] INFO: No improvement for 20/30 epochs.
+[2026-01-08 23:44:07] INFO: Epoch 023 | Train Total: 1.4828 (L1: 0.0594, STFT: 0.4167, Anchor: 1.4188, Smooth: 0.0092) | Val Total: 1.8180 (L1: 0.1180, STFT: 0.5387, Anchor: 1.6961, Smooth: 0.0076)
+[2026-01-08 23:44:07] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:44:07] INFO: No improvement for 21/30 epochs.
+[2026-01-08 23:46:52] INFO: Epoch 024 | Train Total: 1.4816 (L1: 0.0586, STFT: 0.4146, Anchor: 1.4184, Smooth: 0.0092) | Val Total: 1.8055 (L1: 0.1050, STFT: 0.5201, Anchor: 1.6967, Smooth: 0.0077)
+[2026-01-08 23:46:52] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:46:52] INFO: No improvement for 22/30 epochs.
+[2026-01-08 23:49:37] INFO: Epoch 025 | Train Total: 1.4814 (L1: 0.0586, STFT: 0.4150, Anchor: 1.4182, Smooth: 0.0091) | Val Total: 1.8051 (L1: 0.1086, STFT: 0.5270, Anchor: 1.6926, Smooth: 0.0077)
+[2026-01-08 23:49:37] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:49:37] INFO: No improvement for 23/30 epochs.
+[2026-01-08 23:52:23] INFO: Epoch 026 | Train Total: 1.4800 (L1: 0.0573, STFT: 0.4117, Anchor: 1.4181, Smooth: 0.0092) | Val Total: 1.8058 (L1: 0.1085, STFT: 0.5277, Anchor: 1.6937, Smooth: 0.0074)
+[2026-01-08 23:52:23] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:52:23] INFO: No improvement for 24/30 epochs.
+[2026-01-08 23:55:10] INFO: Epoch 027 | Train Total: 1.4786 (L1: 0.0566, STFT: 0.4099, Anchor: 1.4174, Smooth: 0.0092) | Val Total: 1.8122 (L1: 0.1126, STFT: 0.5289, Anchor: 1.6958, Smooth: 0.0077)
+[2026-01-08 23:55:10] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:55:10] INFO: No improvement for 25/30 epochs.
+[2026-01-08 23:57:53] INFO: Epoch 028 | Train Total: 1.4775 (L1: 0.0563, STFT: 0.4080, Anchor: 1.4165, Smooth: 0.0093) | Val Total: 1.8078 (L1: 0.1084, STFT: 0.5224, Anchor: 1.6954, Smooth: 0.0079)
+[2026-01-08 23:57:53] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-08 23:57:53] INFO: No improvement for 26/30 epochs.
+[2026-01-09 00:00:36] INFO: Epoch 029 | Train Total: 1.4768 (L1: 0.0562, STFT: 0.4068, Anchor: 1.4160, Smooth: 0.0093) | Val Total: 1.8182 (L1: 0.1182, STFT: 0.5366, Anchor: 1.6963, Smooth: 0.0074)
+[2026-01-09 00:00:37] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-09 00:00:37] INFO: No improvement for 27/30 epochs.
+[2026-01-09 00:03:22] INFO: Epoch 030 | Train Total: 1.4760 (L1: 0.0558, STFT: 0.4058, Anchor: 1.4156, Smooth: 0.0093) | Val Total: 1.8041 (L1: 0.1051, STFT: 0.5196, Anchor: 1.6951, Smooth: 0.0077)
+[2026-01-09 00:03:22] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-09 00:03:22] INFO: No improvement for 28/30 epochs.
+[2026-01-09 00:06:07] INFO: Epoch 031 | Train Total: 1.4747 (L1: 0.0550, STFT: 0.4044, Anchor: 1.4151, Smooth: 0.0093) | Val Total: 1.8051 (L1: 0.1062, STFT: 0.5190, Anchor: 1.6950, Smooth: 0.0077)
+[2026-01-09 00:06:07] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-09 00:06:07] INFO: No improvement for 29/30 epochs.
+[2026-01-09 00:08:50] INFO: Epoch 032 | Train Total: 1.4735 (L1: 0.0550, STFT: 0.4018, Anchor: 1.4139, Smooth: 0.0093) | Val Total: 1.8145 (L1: 0.1175, STFT: 0.5304, Anchor: 1.6931, Smooth: 0.0076)
+[2026-01-09 00:08:51] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor/checkpoints/Exp_a0.0_b1.0_g0.5_L1_plus_Anchor_last.pth
+[2026-01-09 00:08:51] INFO: No improvement for 30/30 epochs.
+[2026-01-09 00:08:51] INFO: Early stopping triggered after 30 epochs with no improvement.
+[2026-01-09 00:08:51] INFO: Training Finished Successfully!

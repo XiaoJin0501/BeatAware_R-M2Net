@@ -1,0 +1,18 @@
+{
+  "exp_name": "Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology",
+  "alpha": 1.0,
+  "beta": 1.0,
+  "gamma": 0.5,
+  "exp_tag": "High_Alpha_Morphology",
+  "seed": 42,
+  "device": "cuda",
+  "fs": 200,
+  "qc_test_bad_indices_path": "/root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/test_bad_indices.npy",
+  "ckpt_path": "/root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology/checkpoints/Exp_a1.0_b1.0_g0.5_High_Alpha_Morphology_best.pth",
+  "timestamp": "2026-01-09 03:19:31",
+  "stft_fmin": 0.5,
+  "stft_fmax": 40.0,
+  "stft_use_band": true,
+  "anchor_from_logits": true,
+  "anchor_pos_weight": 20.0
+}
