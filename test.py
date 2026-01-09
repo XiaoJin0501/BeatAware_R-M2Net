@@ -92,16 +92,55 @@ def _f1_precision_recall(mask_pred_bin: np.ndarray, mask_true_bin: np.ndarray) -
 
 
 def _topk_case_indices(pcc_list: List[float], k: int = 5) -> Dict[str, List[int]]:
-    """Return indices for best/worst/median/random cases."""
+    """
+    Return indices for best/worst/median/random cases.
+    Robust to NaN PCC: treat NaN as very small value so it won't be selected as best.
+    """
     pcc = np.asarray(pcc_list, dtype=np.float64)
     n = len(pcc_list)
-    order = np.argsort(pcc)  # ascending
-    best = order[-k:].tolist() if n >= k else order.tolist()
-    worst = order[:k].tolist() if n >= k else order.tolist()
+    if n == 0:
+        return {"best": [], "worst": [], "median": [], "random": []}
+
+    pcc_sort = np.nan_to_num(pcc, nan=-1e9, posinf=1e9, neginf=-1e9)
+    order = np.argsort(pcc_sort)  # ascending
+
+    kk = min(k, n)
+    best = order[-kk:].tolist()
+    worst = order[:kk].tolist()
     median = [int(order[n // 2])] if n > 0 else []
+
     rng = np.random.RandomState(0)
-    rand = rng.choice(np.arange(n), size=min(k, n), replace=False).tolist() if n > 0 else []
+    rand = rng.choice(np.arange(n), size=kk, replace=False).tolist() if n > 0 else []
     return {"best": best, "worst": worst, "median": median, "random": rand}
+
+
+def _load_state_dict_robust(model: torch.nn.Module, checkpoint: dict, strict_first: bool = True) -> None:
+    """
+    Try strict=True; if fails, try to strip 'module.' and fallback to strict=False.
+    """
+    state = checkpoint.get("model_state_dict", checkpoint)
+
+    # Try strict load
+    if strict_first:
+        try:
+            model.load_state_dict(state, strict=True)
+            return
+        except Exception as e:
+            print(f"[WARN] strict=True load failed: {repr(e)}")
+
+    # Strip 'module.' if exists
+    if isinstance(state, dict) and any(k.startswith("module.") for k in state.keys()):
+        new_state = {}
+        for k, v in state.items():
+            new_state[k.replace("module.", "", 1)] = v
+        state = new_state
+
+    # Fallback strict=False with reporting
+    missing, unexpected = model.load_state_dict(state, strict=False)
+    if len(missing) > 0:
+        print(f"[WARN] Missing keys ({len(missing)}): {missing[:20]}{' ...' if len(missing) > 20 else ''}")
+    if len(unexpected) > 0:
+        print(f"[WARN] Unexpected keys ({len(unexpected)}): {unexpected[:20]}{' ...' if len(unexpected) > 20 else ''}")
 
 
 @dataclass
@@ -118,7 +157,6 @@ class MetaInfo:
     ckpt_path: str
     timestamp: str
 
-    # Optional loss-related config if you added them in Config
     stft_fmin: Optional[float] = None
     stft_fmax: Optional[float] = None
     stft_use_band: Optional[bool] = None
@@ -136,7 +174,7 @@ def test():
     parser.add_argument('--gamma', type=float, default=0.1, help='Smooth loss weight used in training')
     parser.add_argument('--exp_tag', type=str, default="Default", help='Tag used for this experiment')
 
-    # optional knobs for analysis only (won't break your structure)
+    # optional knobs (analysis only)
     parser.add_argument('--mask_thr', type=float, default=0.5, help='threshold for predicted mask (sigmoid probs)')
     parser.add_argument('--save_cases_k', type=int, default=5, help='number of best/worst/random cases to export')
     parser.add_argument('--export_full_npz', action='store_true', help='export per-segment NPZ (large), off by default')
@@ -155,6 +193,7 @@ def test():
     ckpt_path = os.path.join(Config.CKPT_DIR, f"{Config.EXP_NAME}_best.pth")
     result_dir = Config.RESULT_DIR
     _ensure_dir(result_dir)
+
     cases_dir = os.path.join(result_dir, "cases")
     _ensure_dir(cases_dir)
 
@@ -200,9 +239,7 @@ def test():
 
     print(f"✅ Loading weights from: {ckpt_path}")
     checkpoint = torch.load(ckpt_path, map_location=device)
-    # tolerant load
-    state = checkpoint.get("model_state_dict", checkpoint)
-    model.load_state_dict(state, strict=True)
+    _load_state_dict_robust(model, checkpoint, strict_first=True)
     model.eval()
 
     # --------------------------
@@ -232,16 +269,15 @@ def test():
     # --------------------------
     # 5) Inference + metrics
     # --------------------------
-    # segment-level records (each test window)
     seg_rows: List[Dict[str, Any]] = []
     clinical_rows: List[Dict[str, Any]] = []
     mask_rows: List[Dict[str, Any]] = []
 
-    # for case export
+    # for case export / compatibility export
     pcc_list: List[float] = []
     pool_for_cases: List[Dict[str, Any]] = []
 
-    # optional full dump (can be huge)
+    # optional per-segment npz (huge)
     full_npz_buffers = []
 
     print(f"🚀 Running inference on {len(test_set)} segments ...")
@@ -251,33 +287,34 @@ def test():
             ecg = ecg.to(device)
             mask_true = mask_true.to(device)
 
-            pred_ecg, pred_mask_logits = model(radar)  # pred_mask is logits (per your latest BA_M2Net)
-            # NOTE: if your model outputs sigmoid already, then change sigmoid usage below accordingly.
+            pred_ecg, pred_mask_logits = model(radar)  # pred_mask is logits
 
-            # ---- waveform metrics (batch=1) ----
+            # ---- waveform metrics ----
             wave_m = calculate_metrics(pred_ecg, ecg)
             pcc_val = float(wave_m.get("Pearson", np.nan))
             mae_val = float(wave_m.get("MAE", np.nan))
             rmse_val = float(wave_m.get("RMSE", np.nan))
 
-            # ---- to numpy vectors ----
+            # ---- numpy vectors ----
             p_np = _to_1d(pred_ecg)
             t_np = _to_1d(ecg)
             r_np = _to_1d(radar)
+
             pm_prob = _sigmoid_np(pred_mask_logits).reshape(-1)
             tm_np = _to_1d(mask_true)
 
-            # ---- clinical (HR/RR/QRS/QT) ----
+            # ---- clinical ----
             p_feat = _safe_feat(p_np, fs=fs)
             t_feat = _safe_feat(t_np, fs=fs)
 
-            # ---- mask quality (pixel-wise) ----
+            # ---- mask quality ----
             tm_bin = (tm_np >= 0.5).astype(np.int32)
             pm_bin = _threshold_mask(pm_prob, thr=float(args.mask_thr))
             f1, prec, rec = _f1_precision_recall(pm_bin, tm_bin)
 
-            # ---- record: segment metrics ----
             sid = int(subject_id.item())
+
+            # segment metrics
             seg_rows.append({
                 "seg_id": int(seg_id),
                 "Subject_ID": sid,
@@ -286,7 +323,7 @@ def test():
                 "RMSE": rmse_val,
             })
 
-            # ---- record: clinical metrics ----
+            # clinical metrics
             row_c = {
                 "seg_id": int(seg_id),
                 "Subject_ID": sid,
@@ -301,7 +338,7 @@ def test():
             row_c["QT_Error"]  = abs(row_c["QT_Pred"] - row_c["QT_True"]) if np.isfinite(row_c["QT_Pred"]) and np.isfinite(row_c["QT_True"]) else np.nan
             clinical_rows.append(row_c)
 
-            # ---- record: mask metrics ----
+            # mask metrics
             mask_rows.append({
                 "seg_id": int(seg_id),
                 "Subject_ID": sid,
@@ -310,13 +347,13 @@ def test():
                 "Mask_Recall": float(rec),
                 "Mask_Prob_Mean": float(np.mean(pm_prob)),
                 "Mask_Prob_Max": float(np.max(pm_prob)),
-                "Mask_True_Sparsity": float(np.mean(tm_bin)),  # fraction of ones
+                "Mask_True_Sparsity": float(np.mean(tm_bin)),
                 "Mask_Pred_Sparsity": float(np.mean(pm_bin)),
             })
 
             pcc_list.append(pcc_val)
 
-            # pool for later case selection (keep minimal but sufficient)
+            # pool for case selection / compatibility npz
             pool_for_cases.append({
                 "seg_id": int(seg_id),
                 "Subject_ID": sid,
@@ -328,7 +365,6 @@ def test():
                 "mask_prob": pm_prob.astype(np.float32),
             })
 
-            # optional: full segment npz (can be huge!)
             if args.export_full_npz:
                 full_npz_buffers.append({
                     "seg_id": int(seg_id),
@@ -361,15 +397,30 @@ def test():
     print(f"   - {mask_csv}")
 
     # --------------------------
+    # 6.1) Compatibility outputs (do NOT break old structure)
+    # --------------------------
+    # test_comprehensive.csv = segment + clinical (+ optionally mask_f1)
+    df_comp = df_seg.merge(df_clin, on=["seg_id", "Subject_ID"], how="left").merge(
+        df_mask[["seg_id", "Subject_ID", "Mask_F1"]], on=["seg_id", "Subject_ID"], how="left"
+    )
+    comp_csv = os.path.join(result_dir, "test_comprehensive.csv")
+    df_comp.to_csv(comp_csv, index=False)
+    print(f"   - {comp_csv} (compat)")
+
+    # bland–altman pairs convenience file (true/pred pairs)
+    ba_cols = ["Subject_ID", "seg_id", "HR_True", "HR_Pred", "RR_True", "RR_Pred", "QRS_True", "QRS_Pred", "QT_True", "QT_Pred"]
+    ba_csv = os.path.join(result_dir, "bland_altman_pairs.csv")
+    df_clin[ba_cols].to_csv(ba_csv, index=False)
+    print(f"   - {ba_csv} (pairs for BA/scatter)")
+
+    # --------------------------
     # 7) Subject-wise summary (inter-subject)
     # --------------------------
-    # subject mean then global stats across subjects
     subj_seg = df_seg.groupby("Subject_ID").mean(numeric_only=True)
     subj_clin = df_clin.groupby("Subject_ID").mean(numeric_only=True)
     subj_mask = df_mask.groupby("Subject_ID").mean(numeric_only=True)
 
-    # merge summaries
-    df_subject = subj_seg.join(subj_clin, how="outer", rsuffix="_clin").join(subj_mask, how="outer", rsuffix="_mask")
+    df_subject = subj_seg.join(subj_clin, how="outer").join(subj_mask, how="outer")
     subject_csv = os.path.join(result_dir, "subject_summary.csv")
     df_subject.reset_index().to_csv(subject_csv, index=False)
     print(f"   - {subject_csv}")
@@ -377,6 +428,11 @@ def test():
     # --------------------------
     # 8) Global summary JSON (publication-ready)
     # --------------------------
+    def _col_or_nan(df: pd.DataFrame, col: str) -> np.ndarray:
+        if col in df.columns:
+            return df[col].values
+        return np.asarray([], dtype=np.float64)
+
     global_summary = {
         "exp_name": Config.EXP_NAME,
         "n_segments": int(len(df_seg)),
@@ -385,16 +441,17 @@ def test():
             "PCC": _nan_summary(df_seg["PCC"].values),
             "MAE": _nan_summary(df_seg["MAE"].values),
             "RMSE": _nan_summary(df_seg["RMSE"].values),
+            "Mask_F1": _nan_summary(_col_or_nan(df_mask, "Mask_F1")),
         },
         "subject_level": {
-            "PCC": _nan_summary(df_subject["PCC"].values),
-            "MAE": _nan_summary(df_subject["MAE"].values),
-            "RMSE": _nan_summary(df_subject["RMSE"].values),
-            "HR_Error": _nan_summary(df_subject.get("HR_Error", pd.Series(dtype=float)).values),
-            "RR_Error": _nan_summary(df_subject.get("RR_Error", pd.Series(dtype=float)).values),
-            "QRS_Error": _nan_summary(df_subject.get("QRS_Error", pd.Series(dtype=float)).values),
-            "QT_Error": _nan_summary(df_subject.get("QT_Error", pd.Series(dtype=float)).values),
-            "Mask_F1": _nan_summary(df_subject.get("Mask_F1", pd.Series(dtype=float)).values),
+            "PCC": _nan_summary(_col_or_nan(df_subject, "PCC")),
+            "MAE": _nan_summary(_col_or_nan(df_subject, "MAE")),
+            "RMSE": _nan_summary(_col_or_nan(df_subject, "RMSE")),
+            "HR_Error": _nan_summary(_col_or_nan(df_subject, "HR_Error")),
+            "RR_Error": _nan_summary(_col_or_nan(df_subject, "RR_Error")),
+            "QRS_Error": _nan_summary(_col_or_nan(df_subject, "QRS_Error")),
+            "QT_Error": _nan_summary(_col_or_nan(df_subject, "QT_Error")),
+            "Mask_F1": _nan_summary(_col_or_nan(df_subject, "Mask_F1")),
         },
     }
 
@@ -413,8 +470,6 @@ def test():
     print(f"   median : {case_idx['median']}")
     print(f"   random : {case_idx['random']}")
 
-    # Map seg_id -> pooled dict
-    # Here pool_for_cases index matches seg_id order, so direct indexing is fine.
     def _save_case(case_name: str, indices: List[int]):
         for j, idx in enumerate(indices):
             item = pool_for_cases[idx]
@@ -438,8 +493,39 @@ def test():
     _save_case("worst", case_idx["worst"])
     _save_case("median", case_idx["median"])
     _save_case("random", case_idx["random"])
-
     print(f"   - cases saved under: {cases_dir}")
+
+    # compatibility visualization_data.npz (best/median/worst single examples)
+    # choose best/worst/median based on PCC order
+    if len(pool_for_cases) > 0:
+        pcc_sort = np.nan_to_num(np.asarray(pcc_list, dtype=np.float64), nan=-1e9)
+        order = np.argsort(pcc_sort)
+        worst_item = pool_for_cases[int(order[0])]
+        best_item = pool_for_cases[int(order[-1])]
+        median_item = pool_for_cases[int(order[len(order)//2])]
+
+        vis_npz = os.path.join(result_dir, "visualization_data.npz")
+        np.savez(
+            vis_npz,
+            best_radar=best_item["radar"],
+            best_ecg_true=best_item["ecg_true"],
+            best_ecg_pred=best_item["ecg_pred"],
+            best_mask_true=best_item["mask_true"],
+            best_mask_pred=best_item["mask_prob"],
+
+            median_radar=median_item["radar"],
+            median_ecg_true=median_item["ecg_true"],
+            median_ecg_pred=median_item["ecg_pred"],
+            median_mask_true=median_item["mask_true"],
+            median_mask_pred=median_item["mask_prob"],
+
+            worst_radar=worst_item["radar"],
+            worst_ecg_true=worst_item["ecg_true"],
+            worst_ecg_pred=worst_item["ecg_pred"],
+            worst_mask_true=worst_item["mask_true"],
+            worst_mask_pred=worst_item["mask_prob"],
+        )
+        print(f"   - {vis_npz} (compat)")
 
     # Optional: full NPZ dump (huge)
     if args.export_full_npz and len(full_npz_buffers) > 0:
@@ -451,7 +537,7 @@ def test():
         print(f"   - full npz saved under: {full_dir} (⚠️ may be very large)")
 
     # --------------------------
-    # 10) Print quick table-like stats
+    # 10) Quick stats
     # --------------------------
     print("\n📊 Quick Stats (subject-wise mean ± std):")
     for col in ["PCC", "MAE", "RMSE", "HR_Error", "RR_Error", "QRS_Error", "QT_Error", "Mask_F1"]:
