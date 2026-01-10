@@ -2,35 +2,46 @@ import torch
 import os
 import h5py
 import numpy as np
-from torch.utils.data import Dataset, DataLoader
-from pathlib import Path
+from torch.utils.data import Dataset
+from typing import Optional, Iterable, Set
+
 
 class RadarDataset(Dataset):
-    def __init__(self, h5_file_path, bad_indices_path: str = None):
+    def __init__(
+        self,
+        h5_file_path: str,
+        bad_indices_path: Optional[str] = None,
+        include_subjects: Optional[Iterable[int]] = None,
+        exclude_subjects: Optional[Iterable[int]] = None,
+        verbose: bool = True,
+    ):
         """
-        Beat-Aware R-M2Net 的专用数据集加载器（支持 QC bad indices 过滤）
+        Beat-Aware R-M2Net 数据集加载器（支持 QC bad indices + Subject 过滤）
 
         Args:
             h5_file_path: .h5 文件路径（train.h5 / test.h5）
-            bad_indices_path: bad_indices.npy 路径（可选）。
-                若提供，则会在 Dataset 层剔除这些样本，使训练/测试完全可复现
+            bad_indices_path: bad_indices.npy 路径（可选）
+            include_subjects: 只保留这些 subject_id（可选）
+            exclude_subjects: 剔除这些 subject_id（可选）
+            verbose: 是否打印摘要
         """
         self.h5_file_path = h5_file_path
-        
-        # 读取基础信息（只读一次，不保持文件句柄，避免多进程冲突）
+
+        # -------- 1) 读取基础信息（只读一次，不保持句柄）--------
         with h5py.File(self.h5_file_path, 'r') as f:
             self.total_length = len(f['radar'])
-            
-            # subject_id：如果 H5 没有，则用 -1 占位（或按需改为 idx->subject 映射）
+
+            # subject_id：建议你的 H5 必须包含该字段（做 subject split 的关键）
             if "subject_id" in f:
                 self.subject_ids = f["subject_id"][:].astype(np.int32)
             else:
+                # 若没有 subject_id，则无法做 subject-wise split
                 self.subject_ids = np.full((self.total_length,), -1, dtype=np.int32)
-            
-        # 2) 构造初始索引
+
+        # -------- 2) 初始索引 --------
         self.indices = np.arange(self.total_length, dtype=np.int64)
-        
-        # 3) 加载并应用 bad_indices 过滤
+
+        # -------- 3) bad_indices 过滤 --------
         self.bad_indices = None
         if bad_indices_path is not None:
             if not os.path.exists(bad_indices_path):
@@ -41,29 +52,48 @@ class RadarDataset(Dataset):
             bad = bad[(bad >= 0) & (bad < self.total_length)]  # 边界保护
 
             self.bad_indices = bad
-
-            # setdiff: 保留不在 bad 中的样本
             self.indices = np.setdiff1d(self.indices, bad, assume_unique=False)
-        
-        # 4) 打印一次摘要（可选，但强烈建议保留，便于实验日志）
-        print(
-            f"[RadarDataset] Loaded: {self.h5_file_path}\n"
-            f"  total_length = {self.total_length}\n"
-            f"  kept_length  = {len(self.indices)}\n"
-            f"  removed_bad  = {0 if self.bad_indices is None else len(self.bad_indices)}"
-        )
-    
-          
+
+        # -------- 4) Subject 过滤（在 bad 过滤之后做，确保可复现）--------
+        inc: Optional[Set[int]] = set(include_subjects) if include_subjects is not None else None
+        exc: Set[int] = set(exclude_subjects) if exclude_subjects is not None else set()
+
+        if inc is not None or len(exc) > 0:
+            sids = self.subject_ids[self.indices]  # 这些是保留样本的 subject_id
+            keep_mask = np.ones_like(sids, dtype=bool)
+
+            if inc is not None:
+                keep_mask &= np.isin(sids, list(inc))
+
+            if len(exc) > 0:
+                keep_mask &= ~np.isin(sids, list(exc))
+
+            self.indices = self.indices[keep_mask]
+
+        # -------- 5) 打印摘要 --------
+        if verbose:
+            # 统计当前数据集中 subject 分布
+            kept_sids = self.subject_ids[self.indices]
+            uniq, cnt = np.unique(kept_sids, return_counts=True)
+            sid_stat = {int(k): int(v) for k, v in zip(uniq, cnt)} if uniq.size > 0 else {}
+
+            print(
+                f"[RadarDataset] Loaded: {self.h5_file_path}\n"
+                f"  total_length = {self.total_length}\n"
+                f"  kept_length  = {len(self.indices)}\n"
+                f"  removed_bad  = {0 if self.bad_indices is None else len(self.bad_indices)}\n"
+                f"  subject_counts = {sid_stat}"
+            )
+
     def __len__(self):
         return len(self.indices)
 
     def __getitem__(self, idx: int):
-        # DataLoader 的 idx -> H5 的真实索引
         real_idx = int(self.indices[idx])
 
-        # 每次 getitem 打开文件，确保多线程安全
+        # 每次 getitem 打开文件，确保多线程/多进程安全
         with h5py.File(self.h5_file_path, "r") as f:
-            radar = f["radar"][real_idx]  # (1, 1600)
+            radar = f["radar"][real_idx]
             ecg = f["ecg"][real_idx]
             mask = f["mask"][real_idx]
 

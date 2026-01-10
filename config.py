@@ -78,7 +78,7 @@ class Config:
     WIN_LENGTHS = [128, 256, 512]
     HOP_SIZES   = [32,  64,  128]
 
-    PATIENCE = 30
+    PATIENCE = 20
 
     # ========= Sampling / STFT band =========
     FS = 200
