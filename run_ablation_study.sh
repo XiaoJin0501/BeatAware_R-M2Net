@@ -1,72 +1,119 @@
 #!/bin/bash
 # ==============================================================================
-# BeatAware_R-M2Net 消融实验 + GPU 自动排队 + 安全关机脚本
+# BeatAware_R-M2Net: Orthogonal Ablation (2^3) + Versioned exp_tag
+# Pipeline: train -> test -> analyze_results -> plot_figures
 # ==============================================================================
 
-set -e  # 任意命令失败即退出（防止 silent error）
+set -euo pipefail
 
-# ---------------- 基本配置 ----------------
-PROJECT_ROOT="$HOME/Projects/BeatAware_R-M2Net"
-cd "$PROJECT_ROOT"
+# -----------------------------
+# User knobs
+# -----------------------------
+MIN_FREE_MB="${MIN_FREE_MB:-14500}"     # gpu_waiter min free mem (MB)
+DO_POWEROFF="${DO_POWEROFF:-0}"         # 1: poweroff after finishing
+RUN_NOTE="${RUN_NOTE:-Ablation2x3}"     # extra tag note (optional)
 
-PYTHON_BIN="python"
-GPU_WAITER="gpu_waiter.py"
+# Optional: if you want to pin python explicitly
+PY="${PY:-python}"
 
-# GPU 空闲阈值（4090 / 4090D 24GB）
-GPU_FREE_GB=14.5
+# -----------------------------
+# Run identity (versioned exp_tag prefix)
+# -----------------------------
+RUN_ID="$(date +%Y%m%d_%H%M%S)"
+GIT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo nogit)"
+TAG_PREFIX="V${RUN_ID}_${GIT_SHA}_${RUN_NOTE}"
 
-# 是否在全部实验完成后自动关机（true / false）
-AUTO_POWEROFF=true
-POWEROFF_DELAY=60   # 秒
+echo "============================================================"
+echo "[RUN] TAG_PREFIX  = ${TAG_PREFIX}"
+echo "[RUN] MIN_FREE_MB = ${MIN_FREE_MB}"
+echo "[RUN] DO_POWEROFF = ${DO_POWEROFF}"
+echo "============================================================"
 
-# 完成标志文件（防止误关机）
-FINISH_FLAG="ALL_ABLATION_DONE.flag"
-
-# ---------------- 消融实验组 ----------------
+# -----------------------------
+# Orthogonal design: 2^3
+# alpha: STFT {0, 0.5}
+# beta : Anchor {0, 1.0}
+# gamma: Smooth {0, 0.5}
+# -----------------------------
 experiments=(
-    "0.0 0.0 0.5 Baseline_L1_Only"
-    "0.0 1.0 0.5 L1_plus_Anchor"
-    "0.5 1.0 0.5 Full_Proposed"
-    "1.0 1.0 0.5 High_Alpha_Morphology"
+  "0.0 0.0 0.25 L1"
+  "0.5 0.0 0.25 L1+STFT"
+  "0.0 1.0 0.25 L1+Anchor"
+  "0.5 1.0 0.25 L1+STFT+Anchor"
+  "0.8 0.8 0.25 Full(STFT+Anchor+Smooth)"
 )
 
-echo "============================================================"
-echo "🚀 BeatAware_R-M2Net Ablation Experiments Started"
-echo "📂 Project: $PROJECT_ROOT"
-echo "============================================================"
+# -----------------------------
+# Helpers
+# -----------------------------
+run_train () {
+  local alpha="$1"; local beta="$2"; local gamma="$3"; local tag="$4"
+  echo "----------------------------------------------------------------"
+  echo "[TRAIN] ${tag} (alpha=${alpha}, beta=${beta}, gamma=${gamma})"
+  echo "----------------------------------------------------------------"
 
+  # IMPORTANT: pass as argv list (do not pack into a single string)
+  # gpu_waiter.py will run your command only when GPU has enough free mem.
+  ${PY} gpu_waiter.py \
+    ${PY} train.py --alpha "${alpha}" --beta "${beta}" --gamma "${gamma}" --exp_tag "${tag}"
+}
+
+run_test () {
+  local alpha="$1"; local beta="$2"; local gamma="$3"; local tag="$4"
+  echo "----------------------------------------------------------------"
+  echo "[TEST ] ${tag} (alpha=${alpha}, beta=${beta}, gamma=${gamma})"
+  echo "----------------------------------------------------------------"
+  ${PY} test.py --alpha "${alpha}" --beta "${beta}" --gamma "${gamma}" --exp_tag "${tag}"
+}
+
+# -----------------------------
+# Main loop
+# -----------------------------
 for exp in "${experiments[@]}"; do
-    read -r ALPHA BETA GAMMA TAG <<< "$exp"
+  read -r ALPHA BETA GAMMA SHORT <<< "$exp"
+  EXP_TAG="${TAG_PREFIX}__${SHORT}"
 
-    echo
-    echo "------------------------------------------------------------"
-    echo "🧪 Experiment: $TAG"
-    echo "   Alpha=$ALPHA | Beta=$BETA | Gamma=$GAMMA"
-    echo "------------------------------------------------------------"
+  run_train "${ALPHA}" "${BETA}" "${GAMMA}" "${EXP_TAG}"
+  run_test  "${ALPHA}" "${BETA}" "${GAMMA}" "${EXP_TAG}"
 
-    TRAIN_CMD="$PYTHON_BIN train.py --alpha $ALPHA --beta $BETA --gamma $GAMMA --exp_tag $TAG"
-    TEST_CMD="$PYTHON_BIN test.py  --alpha $ALPHA --beta $BETA --gamma $GAMMA --exp_tag $TAG"
-
-    echo "⏳ Waiting for GPU (free >= ${GPU_FREE_GB} GB)..."
-    $PYTHON_BIN $GPU_WAITER "$TRAIN_CMD"
-
-    echo "📈 Training finished. Start testing..."
-    $TEST_CMD
-
-    echo "✅ Experiment [$TAG] finished successfully."
+  echo "✅ Finished: ${EXP_TAG}"
 done
 
-# ---------------- 所有实验完成 ----------------
-touch "$FINISH_FLAG"
+# -----------------------------
+# Analyze across this run only
+# -----------------------------
+echo "============================================================"
+echo "[ANALYZE] Collecting results for this run (pattern=${TAG_PREFIX})"
+echo "============================================================"
 
-echo
-echo "🎉 All ablation experiments completed!"
-echo "📄 Finish flag created: $FINISH_FLAG"
+# analyze_results.py will scan experiments/ and aggregate per-exp global_summary.json + subject_summary.csv
+# Use a pattern to only include experiments from this run.
+${PY} analyze_results.py \
+  --experiments_dir "experiments" \
+  --pattern "Exp_a*_b*_g*_${TAG_PREFIX}__*" \
+  --out_dir "experiments/_analysis/${TAG_PREFIX}"
 
-# ---------------- 自动关机（可选） ----------------
-if [ "$AUTO_POWEROFF" = true ] && [ -f "$FINISH_FLAG" ]; then
-    echo "🧯 Auto poweroff enabled."
-    echo "⏳ System will power off in ${POWEROFF_DELAY}s (Ctrl+C to cancel)..."
-    sleep "$POWEROFF_DELAY"
-    sudo poweroff || shutdown -h now
+# -----------------------------
+# Plot figures
+# -----------------------------
+echo "============================================================"
+echo "[PLOT] Generating ablation figures into experiments/_analysis/${TAG_PREFIX}/figures"
+echo "============================================================"
+
+${PY} tools/plot_figures.py \
+  --exp_root "experiments" \
+  --out_dir "experiments/_analysis/${TAG_PREFIX}/figures" \
+  --mode "ablation" \
+  --do_ba
+
+echo "🎉 All done!"
+echo "👉 Analysis output: experiments/_analysis/${TAG_PREFIX}"
+echo "👉 Figures output : experiments/_analysis/${TAG_PREFIX}/figures"
+
+# -----------------------------
+# Optional poweroff
+# -----------------------------
+if [[ "${DO_POWEROFF}" == "1" ]]; then
+  echo "⚠️ DO_POWEROFF=1 -> powering off now."
+  sudo poweroff
 fi
