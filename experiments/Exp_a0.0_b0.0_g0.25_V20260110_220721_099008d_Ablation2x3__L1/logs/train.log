@@ -1,0 +1,12 @@
+[2026-01-10 22:07:23] INFO: 🚀 Experiment Started: Exp_a0.0_b0.0_g0.25_V20260110_220721_099008d_Ablation2x3__L1
+[2026-01-10 22:07:23] INFO: 📊 Hyperparams: Alpha=0.0, Beta=0.0, Gamma=0.25
+[2026-01-10 22:07:23] INFO: 📂 Data Directory: /root/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2026-01-10 22:07:23] INFO: 💻 Device: cuda
+[2026-01-10 22:07:23] INFO: [QC] TRAIN_BAD_INDICES_PATH = /root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/train_bad_indices.npy
+[2026-01-10 22:07:23] INFO: [QC] TEST_BAD_INDICES_PATH  = /root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/test_bad_indices.npy
+[2026-01-10 22:07:23] INFO: [VAL] VAL_SUBJECTS = [21, 23]
+[2026-01-10 22:07:23] INFO: [DATA] Train subset: 2305 | Val subset: 617 | Test set: 1161
+[2026-01-10 22:07:23] INFO: ⏳ Initializing model and optimizer...
+[2026-01-10 22:07:24] INFO: Model initialized with 403202 trainable parameters.
+[2026-01-10 22:07:24] INFO: [META] saved to: /root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b0.0_g0.25_V20260110_220721_099008d_Ablation2x3__L1/logs/train_meta.json
+[2026-01-10 22:07:24] INFO: No checkpoint found. Starting fresh training.
