@@ -1,0 +1,18 @@
+{
+  "exp_name": "Exp_a0.0_b0.0_g0.5_V20260111_212416_ec83ee8_Ablation2x3__L1",
+  "alpha": 0.0,
+  "beta": 0.0,
+  "gamma": 0.5,
+  "exp_tag": "V20260111_212416_ec83ee8_Ablation2x3__L1",
+  "seed": 42,
+  "device": "cuda",
+  "fs": 200,
+  "qc_test_bad_indices_path": "/root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/test_bad_indices.npy",
+  "ckpt_path": "/root/Projects/BeatAware_R-M2Net/experiments/Exp_a0.0_b0.0_g0.5_V20260111_212416_ec83ee8_Ablation2x3__L1/checkpoints/Exp_a0.0_b0.0_g0.5_V20260111_212416_ec83ee8_Ablation2x3__L1_best.pth",
+  "timestamp": "2026-01-11 21:59:03",
+  "stft_fmin": 0.5,
+  "stft_fmax": 40.0,
+  "stft_use_band": true,
+  "anchor_from_logits": true,
+  "anchor_pos_weight": 20.0
+}

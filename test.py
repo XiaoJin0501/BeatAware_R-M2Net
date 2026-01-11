@@ -435,6 +435,7 @@ def test():
     df_subject.reset_index().to_csv(subject_csv, index=False)
     print(f"   - {subject_csv}")
 
+
     # --------------------------
     # 8) Global summary JSON (publication-ready)
     # --------------------------
