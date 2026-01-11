@@ -416,10 +416,20 @@ def test():
     # --------------------------
     # 7) Subject-wise summary (inter-subject)
     # --------------------------
+    # 注意：seg_id 是“样本编号”，不应进入 subject-level mean，否则会造成 join 列冲突
     subj_seg = df_seg.groupby("Subject_ID").mean(numeric_only=True)
-    subj_clin = df_clin.groupby("Subject_ID").mean(numeric_only=True)
-    subj_mask = df_mask.groupby("Subject_ID").mean(numeric_only=True)
 
+    subj_clin = (
+        df_clin.drop(columns=["seg_id"], errors="ignore")
+            .groupby("Subject_ID").mean(numeric_only=True)
+    )
+
+    subj_mask = (
+        df_mask.drop(columns=["seg_id"], errors="ignore")
+            .groupby("Subject_ID").mean(numeric_only=True)
+    )
+
+    # 合并：subject-level 表
     df_subject = subj_seg.join(subj_clin, how="outer").join(subj_mask, how="outer")
     subject_csv = os.path.join(result_dir, "subject_summary.csv")
     df_subject.reset_index().to_csv(subject_csv, index=False)
