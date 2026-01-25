@@ -413,21 +413,15 @@ def test():
     df_clin[ba_cols].to_csv(ba_csv, index=False)
     print(f"   - {ba_csv} (pairs for BA/scatter)")
 
-    # --------------------------
     # 7) Subject-wise summary (inter-subject)
-    # --------------------------
-    # 注意：seg_id 是“样本编号”，不应进入 subject-level mean，否则会造成 join 列冲突
-    subj_seg = df_seg.groupby("Subject_ID").mean(numeric_only=True)
+    # 关键修复：seg_id 不应参与 subject-level 聚合，否则 join 会出现列名冲突（seg_id overlap）
+    df_seg_subj  = df_seg.drop(columns=["seg_id"], errors="ignore")
+    df_clin_subj = df_clin.drop(columns=["seg_id"], errors="ignore")
+    df_mask_subj = df_mask.drop(columns=["seg_id"], errors="ignore")
 
-    subj_clin = (
-        df_clin.drop(columns=["seg_id"], errors="ignore")
-            .groupby("Subject_ID").mean(numeric_only=True)
-    )
-
-    subj_mask = (
-        df_mask.drop(columns=["seg_id"], errors="ignore")
-            .groupby("Subject_ID").mean(numeric_only=True)
-    )
+    subj_seg  = df_seg_subj.groupby("Subject_ID").mean(numeric_only=True)
+    subj_clin = df_clin_subj.groupby("Subject_ID").mean(numeric_only=True)
+    subj_mask = df_mask_subj.groupby("Subject_ID").mean(numeric_only=True)
 
     # 合并：subject-level 表
     df_subject = subj_seg.join(subj_clin, how="outer").join(subj_mask, how="outer")

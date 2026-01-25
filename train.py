@@ -190,16 +190,7 @@ def train():
         pin_memory=(Config.DEVICE == "cuda"),
         persistent_workers=(Config.NUM_WORKERS > 0),
     )
-    test_loader = DataLoader(
-        test_set,
-        batch_size=Config.BATCH_SIZE,
-        shuffle=False,
-        num_workers=Config.NUM_WORKERS,
-        drop_last=False,
-        pin_memory=(Config.DEVICE == "cuda"),
-        persistent_workers=(Config.NUM_WORKERS > 0),
-    )
-
+    
     # --------------------------
     # 4) Build model + loss + optimizer
     # --------------------------
@@ -280,6 +271,19 @@ def train():
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(asdict(meta), f, indent=2)
     logger.info(f"[META] saved to: {meta_path}")
+    logger.info("=" * 80)
+    logger.info("[META] Snapshot")
+    logger.info(f"[META] EXP_NAME          : {meta.exp_name}")
+    logger.info(f"[META] EXP_TAG           : {meta.exp_tag}")
+    logger.info(f"[META] ALPHA/BETA/GAMMA  : {meta.alpha}/{meta.beta}/{meta.gamma}")
+    logger.info(f"[META] VAL_SUBJECTS      : {meta.val_subjects}")
+    logger.info(f"[META] N_train/N_val/N_test : {meta.n_train}/{meta.n_val}/{meta.n_test}")
+    logger.info(f"[META] TRAIN_H5          : {meta.train_h5}")
+    logger.info(f"[META] TEST_H5           : {meta.test_h5}")
+    logger.info(f"[META] Train bad idx     : {meta.train_bad_indices_path}")
+    logger.info(f"[META] Test  bad idx     : {meta.test_bad_indices_path}")
+    logger.info("=" * 80)
+
 
     # --------------------------
     # 6) Resume / Early stopping
@@ -298,7 +302,8 @@ def train():
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         start_epoch = int(checkpoint.get('epoch', -1)) + 1
-        best_val_loss = float(checkpoint.get('best_val_loss', float('inf')))
+        tmp = checkpoint.get("best_val_loss", None)
+        best_val_loss = float(tmp) if tmp is not None else float("inf")
         epochs_no_improve = int(checkpoint.get('epochs_no_improve', 0))
 
         logger.info(f"Resumed from Epoch {start_epoch}. Best Val Loss so far: {best_val_loss:.6f}")

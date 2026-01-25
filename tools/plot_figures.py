@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
 # -----------------------------
 # style
 # -----------------------------
@@ -27,6 +28,41 @@ def set_style():
         "pdf.fonttype": 42,
         "ps.fonttype": 42,
     })
+
+def run_one_experiment(exp_dir: str, out_dir: str, mode: str = "per_exp", do_ba: bool = False):
+    global EXP_DIR, RESULT_DIR, FIG_DIR
+    EXP_DIR = exp_dir
+    RESULT_DIR = os.path.join(EXP_DIR, "results")
+
+    # 单实验输出目录：建议每个实验一个子目录，避免覆盖
+    exp_subdir = os.path.join(out_dir, exp_name(EXP_DIR))
+    FIG_DIR = exp_subdir
+    ensure_dir(FIG_DIR)
+
+    # 如果你原来默认把图存到 <exp_dir>/figures，也可以改成：
+    # FIG_DIR = os.path.join(EXP_DIR, "figures")
+
+    # 统一风格
+    set_style()
+
+    # ========= 这里开始放“原先顶层画图流程” =========
+    # 你原来大概率会做：
+    # 1) 读 segment_metrics.csv / clinical_metrics.csv / mask_metrics.csv / global_summary.json / meta.json
+    # 2) 画 PCC/MAE/RMSE 分布
+    # 3) 画 subject_summary 柱状图
+    # 4) 导出 best/worst case 可视化
+    #
+    # 你只需要把那段“顶层会执行的画图代码”整体搬到这里即可，
+    # 不要在文件顶层再直接执行任何绘图。
+
+    # 举例（根据你实际实现替换）：
+    # df_seg = safe_read_csv(os.path.join(RESULT_DIR, "segment_metrics.csv"))
+    # ...
+    # fig = ...
+    # save_fig(fig, os.path.join(FIG_DIR, "xxx"))
+    #
+    # ========= 结束 =========
+
 
 def ensure_dir(p: str):
     os.makedirs(p, exist_ok=True)
@@ -474,31 +510,34 @@ def run_paper(exp_results: List[Dict[str, Any]], out_dir: str):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--exp_root", type=str, default="experiments")
-    parser.add_argument("--out_dir", type=str, default="Figures")
-    parser.add_argument("--mode", type=str, default="all", choices=["all", "per_exp", "ablation", "paper"])
-    parser.add_argument("--do_ba", action="store_true", help="also export Bland–Altman for per-exp")
+    parser.add_argument("--exp_dir", type=str, default=None,
+                        help="(single) Path to experiments/Exp_xxx directory")
+    parser.add_argument("--exp_root", type=str, default="experiments",
+                        help="Root dir contains Exp_* folders")
+    parser.add_argument("--out_dir", type=str, default=None,
+                        help="Output dir for figures. Default: <exp_dir>/figures or <exp_root>/_figures")
+    parser.add_argument("--mode", type=str, default="per_exp",
+                        choices=["all", "per_exp", "ablation", "paper"],
+                        help="Plot mode")
+    parser.add_argument("--do_ba", action="store_true",
+                        help="Optional: enable Bland-Altman plots if implemented")
     args = parser.parse_args()
 
-    set_style()
-    ensure_dir(args.out_dir)
+    # --- 决定本次要画哪些实验 ---
+    if args.exp_dir is not None:
+        exp_dirs = [args.exp_dir]
+        out_dir_default = os.path.join(args.exp_dir, "figures")
+    else:
+        exp_dirs = list_experiments(args.exp_root)
+        out_dir_default = os.path.join(args.exp_root, "_figures")
 
-    exp_dirs = list_experiments(args.exp_root)
-    if len(exp_dirs) == 0:
-        raise RuntimeError(f"No experiments found under {args.exp_root}/Exp_*")
+    out_dir = args.out_dir if args.out_dir is not None else out_dir_default
+    ensure_dir(out_dir)
 
-    exp_results = [load_exp_results(ed) for ed in exp_dirs]
+    # 下面：对每个 exp_dir 画图
+    for exp_dir in exp_dirs:
+        run_one_experiment(exp_dir, out_dir=out_dir, mode=args.mode, do_ba=args.do_ba)
 
-    if args.mode in ["all", "ablation"]:
-        run_ablation(exp_results, os.path.join(args.out_dir, "Ablation_Comparison"))
-
-    if args.mode in ["all", "per_exp"]:
-        run_per_exp(exp_results, args.out_dir, do_ba=args.do_ba)
-
-    if args.mode in ["all", "paper"]:
-        run_paper(exp_results, os.path.join(args.out_dir, "Paper"))
-
-    print(f"\n✅ Done. Output: {args.out_dir}")
 
 if __name__ == "__main__":
     main()
