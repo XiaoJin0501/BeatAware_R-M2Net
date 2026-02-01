@@ -238,3 +238,394 @@ $$
     * **PCC** (Pearson Correlation Coefficient): 评估波形趋势相关性。
     * **RMSE** (Root Mean Square Error): 评估幅值误差。
     * **MAE** (Mean Absolute Error): 评估平均误差。
+
+# Dataset Split and Experimental Protocol
+
+## Purpose of This Record
+
+This document records the dataset partitioning strategy and experimental protocol used in the radar-to-ECG reconstruction experiments.
+
+The primary purpose of this record is to:
+- Explicitly define the dataset split configuration
+- Prevent ambiguity regarding data leakage or evaluation protocol
+- Serve as a reference for paper writing, revision, and reproducibility
+
+This is a **methodological protocol record**, not a performance summary.
+
+---
+
+## Dataset Split Overview
+
+| Split        | #Subjects | #Samples | Window Length | Overlap | Sampling Rate |
+|--------------|-----------|----------|---------------|---------|---------------|
+| Train        | XX        | XXXX     | X s           | XX %    | XXX Hz        |
+| Validation   | XX        | XXXX     | X s           | XX %    | XXX Hz        |
+| **Test**     | **3**     | XXXX     | X s           | XX %    | XXX Hz        |
+
+---
+
+## Column Definitions
+
+### Split
+- Dataset partitions used for training, validation, and testing.
+- Validation set is used exclusively for hyperparameter tuning.
+- Test set is used only for final evaluation.
+
+### #Subjects
+- Number of unique subjects in each split.
+- **Test subjects are completely unseen during training and validation**.
+
+### #Samples
+- Total number of ECG signal segments (sliding windows).
+- All samples originate from the subjects listed in the corresponding split.
+
+### Window Length
+- Duration of each ECG segment used as model input.
+- Matches the temporal input length of the network.
+
+### Overlap
+- Percentage overlap between adjacent sliding windows.
+- Explicitly reported to avoid misunderstanding regarding sample independence.
+
+### Sampling Rate
+- Sampling frequency of ECG signals after preprocessing.
+
+---
+
+## Critical Protocol Statement
+
+> All dataset splits are strictly **subject-independent**, i.e., subjects appearing in the test set are completely unseen during both training and validation.
+
+This design eliminates subject-level data leakage and ensures that the reported performance reflects true cross-subject generalization.
+
+---
+
+
+# Evaluation Protocol and Performance Tables
+
+## Table 2: Main Performance Table (Core Performance Comparison)
+
+### Purpose
+
+Table 2 serves as the **primary performance comparison table** of this study.  
+Its purpose is to demonstrate that, **under an identical evaluation protocol**, the proposed method outperforms all baseline models.
+
+This table represents the **main quantitative evidence** supporting the effectiveness of the proposed approach.
+
+---
+
+### Table Structure
+
+| Model                    | PCC ↑ | MRE ↓ | RR_err (ms) ↓ | QRS_err (ms) ↓ | QT_err (ms) ↓ |
+|--------------------------|-------|-------|---------------|----------------|---------------|
+| CNN                      |       |       |               |                |               |
+| LSTM                     |       |       |               |                |               |
+| BiLSTM                   |       |       |               |                |               |
+| **Beat-aware R-M2Net (Ours)** | ** ** | ** ** | ** ** | ** ** | ** ** |
+
+---
+
+### Metric Definitions and Aggregation Rules
+
+The following rules are **strictly and consistently applied to all models**.
+
+#### PCC (Pearson Correlation Coefficient)
+- **Evaluation unit**: all test samples
+- **Reported value**:  
+  - median (preferred), or  
+  - mean ± standard deviation (if explicitly stated)
+
+#### MRE (Mean Relative Error)
+- **Evaluation unit**: all test samples
+- **Reported value**: median  
+- Median is preferred due to the non-Gaussian distribution of reconstruction errors.
+
+#### RR / QRS / QT Error
+- **Evaluation unit**: all detected heartbeats in the test set
+- **Reported value**: median absolute error (milliseconds)
+
+> Only a single scalar value is reported for each metric in Table 2.  
+> The full error distributions are provided separately in the CDF plots (Fig. 4).
+
+---
+
+### Critical Table Note (Mandatory)
+
+> All models are trained and evaluated under the same **subject-independent evaluation protocol**.  
+> Reported values correspond to **median performance on the test set**.
+
+This statement is essential to eliminate concerns regarding unfair comparisons or protocol inconsistencies.
+
+---
+
+## Table 3: Subject-wise Performance Table (Test Subjects Only)
+
+### Purpose
+
+Table 3 provides a **subject-level performance breakdown** on the test set.  
+Its purpose is to analyze the **stability, consistency, and generalization behavior** of the proposed model across different unseen subjects.
+
+This table is **not intended as the primary comparison table**, but rather as a complementary analysis supporting the robustness claims.
+
+---
+
+### Table Structure
+
+| Subject ID | PCC (median) | MRE (median) | RR_err (ms) | QT_err (ms) |
+|------------|--------------|--------------|-------------|-------------|
+| S1         |              |              |             |             |
+| S2         |              |              |             |             |
+| S3         |              |              |             |             |
+
+---
+
+### Subject-wise Aggregation Rules
+
+For each test subject \( s \):
+
+1. Collect **all test samples** belonging to subject \( s \)
+2. Compute sample-level metrics:
+   - \( \text{PCC}_{s,1}, \text{PCC}_{s,2}, \dots \)
+   - \( \text{MRE}_{s,1}, \text{MRE}_{s,2}, \dots \)
+3. Report in Table 3:
+   - `PCC (median)` = median\(\text{PCC}_s\)
+   - `MRE (median)` = median\(\text{MRE}_s\)
+
+For RR / QT intervals:
+- Aggregate **all heartbeat-level errors** detected for subject \( s \)
+- Report the **median absolute error (ms)**
+
+---
+
+### Relationship to Figures
+
+- Table 3 corresponds directly to the **subject-wise bar plots** shown in Fig. 3.
+- Together, they provide both **numerical summaries** and **visual distributional insights**.
+
+---
+
+### Recommended Table Note
+
+> For each test subject, the median value across all test samples is reported to characterize typical subject-level performance.
+
+---
+
+
+
+# Architecture Ablation of Beat-Aware R-M2Net
+
+## Purpose
+
+This ablation study investigates the **architectural contributions** of key components in the proposed Beat-Aware R-M2Net framework.
+
+The goal is to:
+- Isolate the effect of **beat-aware supervision and conditioning**
+- Analyze the necessity of **long-range temporal modeling backbones**
+- Provide clear evidence for the design choices of the final model
+
+This table represents a **structural ablation analysis**, not a baseline comparison.
+
+---
+
+## Table 4: Architecture Ablation Study (Unified & Simplified)
+
+| Variant | Anchor Branch | TFiLM (γ/β Conditioning) | GroupMamba / VSSS | PCC ↑ | MRE ↓ | RR_err (ms) ↓ |
+|--------|---------------|--------------------------|------------------|-------|-------|---------------|
+| V0 Base (no beat-aware) | ✗ | ✗ | ✓ |  |  |  |
+| V1 + Anchor only | ✓ | ✗ | ✓ |  |  |  |
+| **V2 + TFiLM (Full beat-aware, Ours)** | ✓ | ✓ | ✓ | ** ** | ** ** | ** ** |
+| V3 − GroupMamba (BiLSTM / TCN) | ✓ | ✓ | ✗ |  |  |  |
+
+---
+
+### V0 — Base (no beat-aware)
+
+- Anchor Prediction Branch is **removed**
+- TFiLM-based conditioning is **disabled**
+- Original temporal modeling backbone (GroupMamba / VSSS) is retained
+
+**Question addressed:**  
+> What level of performance can be achieved **without any beat-level prior information**?
+
+---
+
+### V1 — + Anchor Only
+
+- Anchor Prediction Branch is added with BCE loss
+- Anchor information is **not injected** into the main backbone features
+- GroupMamba / VSSS backbone is retained
+
+**Question addressed:**  
+> Does merely supervising beat localization (e.g., R-peak / rhythm anchors) provide performance gains on its own?
+
+---
+
+### V2 — + TFiLM (Full Beat-Aware, Ours)
+
+- Anchor Prediction Branch is enabled with BCE loss
+- Predicted anchor signals are transformed into γ/β parameters
+- γ/β are injected into backbone features via TFiLM conditioning
+- GroupMamba / VSSS backbone is retained
+
+**Question addressed:**  
+> Is beat-aware feature conditioning the **key source of performance improvement**?
+
+This variant corresponds to the **final proposed model**.
+
+---
+
+### V3 — − GroupMamba (Backbone Replacement)
+
+- Full beat-aware mechanism is retained (Anchor Branch + TFiLM)
+- GroupMamba / VSSS backbone is replaced with BiLSTM or TCN
+- Other components remain unchanged
+
+**Question addressed:**  
+> Under beat-aware conditioning, is a strong long-range temporal backbone still critical?
+
+---
+
+## Metric Aggregation and Evaluation Protocol
+
+The following evaluation rules are **consistently applied across all variants**.
+
+- **PCC** and **MRE**:
+  - Aggregated over **all test samples**
+  - Reported as the **median value**
+
+- **RR interval error**:
+  - Aggregated over **all detected heartbeats**
+  - Reported as the **median absolute error (milliseconds)**
+
+---
+
+## Mandatory Table Note
+
+> All variants are trained and evaluated under the same **subject-independent protocol**.  
+> PCC and MRE are reported as the median over all test samples, while RR interval error is reported as the median over all detected heartbeats.
+
+This statement ensures **fairness, consistency, and reproducibility** across all ablation variants.
+
+---
+
+## Notes
+
+- Each variant modifies **only one architectural factor** at a time.
+- All other training settings, loss functions, and preprocessing steps remain identical.
+- Performance differences can therefore be attributed solely to the architectural changes described above.
+
+
+# Loss Function Design Ablation
+
+## Purpose
+
+This ablation study analyzes the **contribution of different loss components** in the Beat-Aware R-M2Net framework.
+
+The objective is to:
+- Quantify the effect of **waveform-level supervision**
+- Examine the role of **spectral-domain constraints**
+- Evaluate the impact of **beat / rhythm-aware supervision**
+- Demonstrate the **complementarity** between morphological and rhythm constraints
+
+This table is reported as **Supplementary Table S2**.
+
+---
+
+## Supplementary Table S2: Loss Function Design Ablation
+
+| Loss Variant | Waveform Loss (L1) | Spectral Loss (MR-STFT) | Anchor / Beat Loss (BCE) | PCC ↑ | MRE ↓ | RR_err (ms) ↓ |
+|-------------|--------------------|--------------------------|--------------------------|-------|-------|---------------|
+| L0: Time only | ✓ | ✗ | ✗ |  |  |  |
+| L1: Time + Spectral | ✓ | ✓ | ✗ |  |  |  |
+| L2: Time + Anchor | ✓ | ✗ | ✓ |  |  |  |
+| **L3: Full (Ours)** | ✓ | ✓ | ✓ | ** ** | ** ** | ** ** |
+
+---
+
+## Scientific Question Addressed by Each Variant
+
+### L0 — Time Only (Baseline)
+
+- Uses only waveform regression loss (L1 / MAE)
+- No spectral-domain or beat-level supervision is applied
+
+**Question addressed:**  
+> What level of performance can be achieved with **pure time-domain waveform regression** alone?
+
+This variant establishes the **lowest-complexity baseline**.
+
+---
+
+### L1 — Time + Spectral
+
+- Combines L1 waveform loss with multi-resolution STFT loss
+- No beat / anchor supervision is introduced
+
+**Question addressed:**  
+> Does enforcing **spectral consistency** improve ECG morphological quality?
+
+Typical observations include:
+- Increased PCC
+- Reduced MRE
+- Limited improvement in RR interval error
+
+---
+
+### L2 — Time + Anchor
+
+- Combines L1 waveform loss with anchor / beat BCE loss
+- Spectral loss is disabled
+
+**Question addressed:**  
+> Can **rhythm-aware supervision alone** improve heartbeat alignment?
+
+Typical observations include:
+- Significant reduction in RR interval error
+- Limited improvement in PCC and MRE
+
+---
+
+### L3 — Full Loss Design (Ours)
+
+- Combines L1 waveform loss, MR-STFT spectral loss, and anchor BCE loss
+- Represents the final proposed loss design
+
+**Question addressed:**  
+> Are **morphological constraints** and **rhythm-aware constraints** complementary?
+
+This variant typically yields:
+- Substantial improvement in PCC
+- Significant reduction in MRE
+- Consistent reduction in RR interval error
+
+This supports the core hypothesis that **shape-level and rhythm-level supervision are synergistic**.
+
+---
+
+## Evaluation Protocol and Aggregation Rules
+
+All loss variants follow **identical training and evaluation settings**, except for the loss composition.
+
+- **PCC** and **MRE**:
+  - Computed over all test samples
+  - Reported as the **median value**
+
+- **RR interval error**:
+  - Computed over all detected heartbeats
+  - Reported as the **median absolute error (milliseconds)**
+
+---
+
+## Mandatory Table Note
+
+> All loss variants are trained with the same architecture and evaluated under the same **subject-independent protocol**.  
+> PCC and MRE are reported as the median over all test samples, while RR interval error is reported as the median over detected heartbeats.
+
+---
+
+## Notes
+
+- The number of variants is intentionally limited to four to ensure clarity.
+- Each variant introduces **only one additional loss component**.
+- Observed performance differences can therefore be attributed directly to the loss design.
+
