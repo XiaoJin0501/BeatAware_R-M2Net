@@ -1,9 +1,10 @@
+# test.py
 import os
 import json
 import time
 import argparse
 from dataclasses import asdict, dataclass
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, Any, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -11,216 +12,180 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-# --- project imports ---
 from config import Config
 from dataset import RadarDataset
 from models.BA_M2Net import BeatAwareRM2Net
-from utils.metrics import calculate_metrics, extract_clinical_features_nk
 from utils.seeding import seed_everything
 
+# ✅ protocol-aligned metrics
+from utils.metrics import (
+    compute_segment_metrics,
+    compute_beat_metrics_nk,
+    summarize_metrics,
+)
 
-# =========================
-# Utilities (safe + robust)
-# =========================
+
+# -------------------------
+# I/O helpers
+# -------------------------
 def _ensure_dir(p: str):
     os.makedirs(p, exist_ok=True)
 
 
-def _safe_feat(x_1d: np.ndarray, fs: int) -> Dict[str, float]:
-    """Return clinical features dict with float values; missing -> NaN."""
-    try:
-        feat = extract_clinical_features_nk(x_1d, fs=fs) or {}
-        out = {}
-        for k in ["HR", "RR", "QRS", "QT"]:
-            v = feat.get(k, np.nan)
-            try:
-                out[k] = float(v)
-            except Exception:
-                out[k] = np.nan
-        return out
-    except Exception:
-        return {"HR": np.nan, "RR": np.nan, "QRS": np.nan, "QT": np.nan}
-
-
-def _nan_summary(x: np.ndarray) -> Dict[str, float]:
-    """Return summary stats robust to NaN."""
-    x = np.asarray(x, dtype=np.float64)
-    x_f = x[np.isfinite(x)]
-    if x_f.size == 0:
-        return {
-            "mean": np.nan, "std": np.nan, "median": np.nan,
-            "q05": np.nan, "q25": np.nan, "q75": np.nan, "q95": np.nan,
-            "min": np.nan, "max": np.nan, "n": 0
-        }
-    return {
-        "mean": float(np.mean(x_f)),
-        "std": float(np.std(x_f)),
-        "median": float(np.median(x_f)),
-        "q05": float(np.quantile(x_f, 0.05)),
-        "q25": float(np.quantile(x_f, 0.25)),
-        "q75": float(np.quantile(x_f, 0.75)),
-        "q95": float(np.quantile(x_f, 0.95)),
-        "min": float(np.min(x_f)),
-        "max": float(np.max(x_f)),
-        "n": int(x_f.size),
-    }
-
-
-def _to_1d(x: torch.Tensor) -> np.ndarray:
+def _to_1d_np(x: torch.Tensor) -> np.ndarray:
     return x.detach().cpu().numpy().reshape(-1).astype(np.float64)
 
 
-def _sigmoid_np(x: torch.Tensor) -> np.ndarray:
-    return torch.sigmoid(x).detach().cpu().numpy().astype(np.float64)
+def _save_npz_case(path: str, radar_1d: np.ndarray, gt_1d: np.ndarray, pred_1d: np.ndarray,
+                   meta: Dict[str, Any]):
+    # keep it minimal and stable for plotting scripts
+    np.savez(
+        path,
+        radar=radar_1d.astype(np.float32),
+        ecg_true=gt_1d.astype(np.float32),
+        ecg_pred=pred_1d.astype(np.float32),
+        **{k: np.array([v]) if np.isscalar(v) else v for k, v in meta.items()}
+    )
 
 
-def _threshold_mask(prob_1d: np.ndarray, thr: float = 0.5) -> np.ndarray:
-    return (prob_1d >= thr).astype(np.int32)
+def _median_iqr_series(x: pd.Series) -> Dict[str, float]:
+    x = pd.to_numeric(x, errors="coerce").dropna().astype(float).values
+    if x.size == 0:
+        return {"median": np.nan, "p25": np.nan, "p75": np.nan}
+    return {
+        "median": float(np.median(x)),
+        "p25": float(np.percentile(x, 25)),
+        "p75": float(np.percentile(x, 75)),
+    }
 
 
-def _f1_precision_recall(mask_pred_bin: np.ndarray, mask_true_bin: np.ndarray) -> Tuple[float, float, float]:
-    """Pixel-wise F1 on 0/1 mask."""
-    mp = mask_pred_bin.astype(np.int32)
-    mt = mask_true_bin.astype(np.int32)
-    tp = int(np.sum((mp == 1) & (mt == 1)))
-    fp = int(np.sum((mp == 1) & (mt == 0)))
-    fn = int(np.sum((mp == 0) & (mt == 1)))
-    prec = tp / (tp + fp + 1e-12)
-    rec = tp / (tp + fn + 1e-12)
-    f1 = 2 * prec * rec / (prec + rec + 1e-12)
-    return float(f1), float(prec), float(rec)
-
-
-def _topk_case_indices(pcc_list: List[float], k: int = 5) -> Dict[str, List[int]]:
+def _choose_fig2_sample(df_seg: pd.DataFrame,
+                        prefer_subject: Optional[int] = None) -> Tuple[int, int]:
     """
-    Return indices for best/worst/median/random cases.
-    Robust to NaN PCC: treat NaN as very small value so it won't be selected as best.
+    Protocol: choose one subject + one median-performing sample.
+    If prefer_subject is None, pick the smallest subject id in test set.
+    Returns (subject_id, seg_id).
     """
-    pcc = np.asarray(pcc_list, dtype=np.float64)
-    n = len(pcc_list)
-    if n == 0:
-        return {"best": [], "worst": [], "median": [], "random": []}
+    if df_seg.empty:
+        return -1, -1
 
-    pcc_sort = np.nan_to_num(pcc, nan=-1e9, posinf=1e9, neginf=-1e9)
-    order = np.argsort(pcc_sort)  # ascending
+    if prefer_subject is None:
+        sid = int(df_seg["subject_id"].min())
+    else:
+        sid = int(prefer_subject)
+        if sid not in set(df_seg["subject_id"].tolist()):
+            sid = int(df_seg["subject_id"].min())
 
-    kk = min(k, n)
-    best = order[-kk:].tolist()
-    worst = order[:kk].tolist()
-    median = [int(order[n // 2])] if n > 0 else []
+    df_s = df_seg[df_seg["subject_id"] == sid].sort_values("pcc").reset_index(drop=True)
+    if len(df_s) == 0:
+        # fallback to global median
+        df_all = df_seg.sort_values("pcc").reset_index(drop=True)
+        mid = int(len(df_all) // 2)
+        return int(df_all.loc[mid, "subject_id"]), int(df_all.loc[mid, "seg_id"])
 
-    rng = np.random.RandomState(0)
-    rand = rng.choice(np.arange(n), size=kk, replace=False).tolist() if n > 0 else []
-    return {"best": best, "worst": worst, "median": median, "random": rand}
-
-
-def _load_state_dict_robust(model: torch.nn.Module, checkpoint: dict, strict_first: bool = True) -> None:
-    """
-    Try strict=True; if fails, try to strip 'module.' and fallback to strict=False.
-    """
-    state = checkpoint.get("model_state_dict", checkpoint)
-
-    # Try strict load
-    if strict_first:
-        try:
-            model.load_state_dict(state, strict=True)
-            return
-        except Exception as e:
-            print(f"[WARN] strict=True load failed: {repr(e)}")
-
-    # Strip 'module.' if exists
-    if isinstance(state, dict) and any(k.startswith("module.") for k in state.keys()):
-        new_state = {}
-        for k, v in state.items():
-            new_state[k.replace("module.", "", 1)] = v
-        state = new_state
-
-    # Fallback strict=False with reporting
-    missing, unexpected = model.load_state_dict(state, strict=False)
-    if len(missing) > 0:
-        print(f"[WARN] Missing keys ({len(missing)}): {missing[:20]}{' ...' if len(missing) > 20 else ''}")
-    if len(unexpected) > 0:
-        print(f"[WARN] Unexpected keys ({len(unexpected)}): {unexpected[:20]}{' ...' if len(unexpected) > 20 else ''}")
+    mid = int(len(df_s) // 2)
+    return int(df_s.loc[mid, "subject_id"]), int(df_s.loc[mid, "seg_id"])
 
 
 @dataclass
 class MetaInfo:
     exp_name: str
-    alpha: float
-    beta: float
-    gamma: float
     exp_tag: str
     seed: int
     device: str
     fs: int
-    qc_test_bad_indices_path: Optional[str]
     ckpt_path: str
+    ckpt_mode: str
     timestamp: str
 
-    stft_fmin: Optional[float] = None
-    stft_fmax: Optional[float] = None
-    stft_use_band: Optional[bool] = None
-    anchor_from_logits: Optional[bool] = None
-    anchor_pos_weight: Optional[float] = None
+    # Protocol pointers
+    fig2_subject_id: int
+    fig2_seg_id: int
+
+    # Optional notes
+    test_h5: str
+    test_bad_indices_path: Optional[str] = None
+    nk_method: str = "peak"
+    rpeak_match_ms: float = 150.0
 
 
 def test():
-    # --------------------------
-    # 0) CLI
-    # --------------------------
-    parser = argparse.ArgumentParser(description="Test BeatAware R-M2Net (publication-grade)")
-    parser.add_argument('--alpha', type=float, default=0.5, help='STFT loss weight used in training')
-    parser.add_argument('--beta', type=float, default=1.0, help='Anchor loss weight used in training')
-    parser.add_argument('--gamma', type=float, default=0.1, help='Smooth loss weight used in training')
-    parser.add_argument('--exp_tag', type=str, default="Default", help='Tag used for this experiment')
+    parser = argparse.ArgumentParser(
+        description="Test BeatAware R-M2Net (protocol-aligned exports: Fig.2–Fig.4 + Table III)"
+    )
 
-    # optional knobs (analysis only)
-    parser.add_argument('--mask_thr', type=float, default=0.5, help='threshold for predicted mask (sigmoid probs)')
-    parser.add_argument('--save_cases_k', type=int, default=5, help='number of best/worst/random cases to export')
-    parser.add_argument('--export_full_npz', action='store_true', help='export per-segment NPZ (large), off by default')
+    parser.add_argument("--exp_tag", type=str, default="Default")
+
+    # checkpoint control
+    parser.add_argument("--ckpt", type=str, default="best",
+                        help="best | last | /abs/path/to.pth or relative path")
+
+    # neurokit delineation
+    parser.add_argument("--nk_method", type=str, default="peak", choices=["peak", "dwt", "cwt"],
+                        help="NeuroKit2 delineation method (peak is most stable).")
+    parser.add_argument("--rpeak_match_ms", type=float, default=150.0,
+                        help="Max R-peak matching distance in ms for beat-level metrics.")
+
+    # protocol exports
+    parser.add_argument("--prefer_fig2_subject", type=int, default=None,
+                        help="Optional: force Fig.2 to use this subject id if available.")
+    parser.add_argument("--save_cases", action="store_true",
+                        help="Export per-subject median cases (Fig.1) + fixed Fig.2 sample.")
+    parser.add_argument("--export_debug_clinical", action="store_true",
+                        help="(Debug only) export segment-level HR/RR/QRS/QT mean features. Not paper mainline.")
+    parser.add_argument("--export_debug_mask", action="store_true",
+                        help="(Debug only) export mask metrics if model outputs mask logits.")
+
     args = parser.parse_args()
 
     # --------------------------
-    # 1) Path & env setup
+    # 1) Setup experiment paths
     # --------------------------
-    new_exp_name = f"Exp_a{args.alpha}_b{args.beta}_g{args.gamma}_{args.exp_tag}"
-    Config.update_paths(new_exp_name)
-
+    Config.update_paths(f"{args.exp_tag}")
     seed_everything(Config.SEED)
     device = Config.DEVICE
-    fs = int(getattr(Config, "FS", 200))
+    fs = int(getattr(Config, "FS_TARGET", getattr(Config, "FS", 200)))
 
-    ckpt_path = os.path.join(Config.CKPT_DIR, f"{Config.EXP_NAME}_best.pth")
     result_dir = Config.RESULT_DIR
     _ensure_dir(result_dir)
-
     cases_dir = os.path.join(result_dir, "cases")
     _ensure_dir(cases_dir)
 
-    print(f"🚀 Starting Test for Experiment: {Config.EXP_NAME}")
-    print(f"   Reading test data from: {Config.TEST_H5}")
-    print(f"   Writing results to     : {result_dir}")
-
-    # QC (test)
+    # QC (test bad indices optional)
     bad_path = getattr(Config, "TEST_BAD_INDICES_PATH", None)
     if bad_path is not None and (not os.path.exists(bad_path)):
         print(f"[QC] TEST_BAD_INDICES_PATH not found, disable: {bad_path}")
         bad_path = None
     print(f"[QC] TEST_BAD_INDICES_PATH = {bad_path}")
 
-    # --------------------------
-    # 2) Dataset
-    # --------------------------
-    test_set = RadarDataset(Config.TEST_H5, bad_indices_path=bad_path)
-    test_loader = DataLoader(
-        test_set,
-        batch_size=1,
-        shuffle=False,
-        num_workers=0
-    )
+    # checkpoint resolve
+    if args.ckpt.lower() == "best":
+        ckpt_path = os.path.join(Config.CKPT_DIR, f"{Config.EXP_NAME}_best.pth")
+        ckpt_mode = "best"
+    elif args.ckpt.lower() == "last":
+        ckpt_path = os.path.join(Config.CKPT_DIR, f"{Config.EXP_NAME}_last.pth")
+        ckpt_mode = "last"
+    else:
+        ckpt_path = args.ckpt
+        ckpt_mode = "path"
+        if not os.path.isabs(ckpt_path):
+            ckpt_path = os.path.join(Config.ROOT_DIR, ckpt_path)
+
+    print(f"🚀 Starting Test: {Config.EXP_NAME}")
+    print(f"   Test data : {Config.TEST_H5}")
+    print(f"   Results   : {result_dir}")
+    print(f"   CKPT mode : {ckpt_mode}")
+    print(f"   CKPT path : {ckpt_path}")
 
     # --------------------------
-    # 3) Model
+    # 2) Dataset + loader
+    # --------------------------
+    test_set = RadarDataset(Config.TEST_H5, bad_indices_path=bad_path)
+    # You can increase batch_size later; keep 1 for simplest reproducibility
+    test_loader = DataLoader(test_set, batch_size=1, shuffle=False, num_workers=0)
+
+    # --------------------------
+    # 3) Model + weights
     # --------------------------
     model = BeatAwareRM2Net(
         in_channels=Config.IN_CHANNELS,
@@ -229,327 +194,293 @@ def test():
 
     if not os.path.exists(ckpt_path):
         raise FileNotFoundError(
-            f"[ERROR] Checkpoint not found!\n"
-            f"  Expected path: {ckpt_path}\n"
-            f"  Please check:\n"
-            f"   1) EXP_NAME consistency between train.py and test.py\n"
-            f"   2) alpha/beta/gamma/exp_tag arguments\n"
-            f"   3) Whether training finished and saved best.pth"
+            f"[ERROR] Checkpoint not found: {ckpt_path}\n"
+            f"Tips: train this EXP_NAME={Config.EXP_NAME}, or pass --ckpt /path/to.pth"
         )
 
-    print(f"✅ Loading weights from: {ckpt_path}")
     checkpoint = torch.load(ckpt_path, map_location=device)
-    _load_state_dict_robust(model, checkpoint, strict_first=True)
+    state = checkpoint.get("model_state_dict", checkpoint)
+    model.load_state_dict(state, strict=True)
     model.eval()
+    print("✅ Model weights loaded.")
 
     # --------------------------
-    # 4) Meta export
+    # 4) Inference + protocol metrics
     # --------------------------
+    segment_rows: List[Dict[str, Any]] = []
+    beat_rows_all: List[Dict[str, Any]] = []
+
+    # counts for beat validity reporting
+    beats_total_sum = 0
+    beats_valid_sum = 0
+    drop_reason_counter: Dict[str, int] = {}
+
+    # minimal cache for case exports
+    # (test set is small; safe to cache waveforms for median-case export)
+    cache: Dict[int, Dict[str, Any]] = {}  # seg_id -> payload
+
+    # optional debug exports
+    clinical_rows: List[Dict[str, Any]] = []
+    mask_rows: List[Dict[str, Any]] = []
+
+    print(f"🚀 Running inference on {len(test_set)} segments ...")
+
+    with torch.no_grad():
+        for seg_id, batch in enumerate(tqdm(test_loader, desc="Testing")):
+            # expected from RadarDataset: radar, ecg, mask, subject_id
+            radar, ecg, mask_true, subject_id = batch
+
+            radar = radar.to(device)
+            ecg = ecg.to(device)
+
+            sid = int(subject_id.item())
+
+            # forward: allow either (pred_ecg, pred_mask_logits) or pred_ecg only
+            out = model(radar)
+            if isinstance(out, (tuple, list)) and len(out) >= 1:
+                pred_ecg = out[0]
+                pred_mask_logits = out[1] if (len(out) > 1) else None
+            else:
+                pred_ecg = out
+                pred_mask_logits = None
+
+            p_np = _to_1d_np(pred_ecg)
+            g_np = _to_1d_np(ecg)
+            r_np = _to_1d_np(radar)
+
+            # ---- segment-level (PCC/MRE) ----
+            seg_m = compute_segment_metrics(p_np, g_np)
+            segment_rows.append({
+                "subject_id": sid,
+                "seg_id": int(seg_id),
+                "pcc": float(seg_m["pcc"]),
+                "mre": float(seg_m["mre"]),
+                # keep debug-friendly columns (not necessarily used in paper)
+                "mae": float(seg_m["mae"]),
+                "rmse": float(seg_m["rmse"]),
+            })
+
+            # ---- beat-level (RR/QRS/QT) ----
+            beats, beat_meta = compute_beat_metrics_nk(
+                p_np, g_np,
+                fs=fs,
+                method=str(args.nk_method),
+                max_rpeak_match_ms=float(args.rpeak_match_ms),
+            )
+
+            # aggregate beat counts
+            beats_total_sum += int(beat_meta.get("n_beats_total", 0))
+            beats_valid_sum += int(beat_meta.get("n_beats_valid", 0))
+            for k, v in (beat_meta.get("drop_reasons", {}) or {}).items():
+                drop_reason_counter[k] = drop_reason_counter.get(k, 0) + int(v)
+
+            # attach identifiers
+            for b in beats:
+                b.update({"subject_id": sid, "seg_id": int(seg_id)})
+            beat_rows_all.extend(beats)
+
+            # ---- cache for cases ----
+            if args.save_cases:
+                cache[int(seg_id)] = {
+                    "subject_id": sid,
+                    "seg_id": int(seg_id),
+                    "pcc": float(seg_m["pcc"]),
+                    "radar": r_np.astype(np.float32),
+                    "ecg_true": g_np.astype(np.float32),
+                    "ecg_pred": p_np.astype(np.float32),
+                }
+
+            # ---- optional debug: clinical features / mask ----
+            if args.export_debug_clinical:
+                # segment-mean clinical features (NOT paper mainline)
+                # kept optional; you can remove entirely if you want.
+                import neurokit2 as nk
+                row = {"subject_id": sid, "seg_id": int(seg_id)}
+                for name, sig in [("gt", g_np), ("pred", p_np)]:
+                    try:
+                        _, info = nk.ecg_peaks(sig, sampling_rate=fs)
+                        rpk = np.asarray(info.get("ECG_R_Peaks", []), dtype=int)
+                        if rpk.size >= 2:
+                            rr_ms = np.diff(rpk) * (1000.0 / fs)
+                            rr = float(np.nanmean(rr_ms))
+                            hr = float(60000.0 / rr) if rr > 1e-6 else np.nan
+                        else:
+                            rr, hr = np.nan, np.nan
+                    except Exception:
+                        rr, hr = np.nan, np.nan
+                    row[f"HR_{name}"] = hr
+                    row[f"RR_{name}"] = rr
+                clinical_rows.append(row)
+
+            if args.export_debug_mask and pred_mask_logits is not None:
+                # mask metrics (NOT paper mainline)
+                import torch.nn.functional as F
+                mt = mask_true.to(device)
+                prob = torch.sigmoid(pred_mask_logits).reshape(-1)
+                gt = mt.reshape(-1)
+                # binarize
+                pb = (prob >= 0.5).to(torch.int32)
+                gb = (gt >= 0.5).to(torch.int32)
+                tp = int(((pb == 1) & (gb == 1)).sum().item())
+                fp = int(((pb == 1) & (gb == 0)).sum().item())
+                fn = int(((pb == 0) & (gb == 1)).sum().item())
+                prec = tp / (tp + fp + 1e-12)
+                rec = tp / (tp + fn + 1e-12)
+                f1 = 2 * prec * rec / (prec + rec + 1e-12)
+                mask_rows.append({
+                    "subject_id": sid,
+                    "seg_id": int(seg_id),
+                    "mask_f1": float(f1),
+                    "mask_precision": float(prec),
+                    "mask_recall": float(rec),
+                    "mask_prob_mean": float(prob.mean().item()),
+                })
+
+    # --------------------------
+    # 5) Save protocol CSVs
+    # --------------------------
+    df_seg = pd.DataFrame(segment_rows)
+    df_beat = pd.DataFrame(beat_rows_all)
+
+    seg_csv = os.path.join(result_dir, "segment_metrics.csv")
+    beat_csv = os.path.join(result_dir, "beat_metrics.csv")
+    df_seg.to_csv(seg_csv, index=False)
+    df_beat.to_csv(beat_csv, index=False)
+
+    print("\n✅ Saved protocol data:")
+    print(f"   - {seg_csv}")
+    print(f"   - {beat_csv}")
+
+    # optional debug exports
+    if args.export_debug_clinical and len(clinical_rows) > 0:
+        clin_csv = os.path.join(result_dir, "clinical_metrics.csv")
+        pd.DataFrame(clinical_rows).to_csv(clin_csv, index=False)
+        print(f"   - {clin_csv}  (debug)")
+
+    if args.export_debug_mask and len(mask_rows) > 0:
+        mask_csv = os.path.join(result_dir, "mask_metrics.csv")
+        pd.DataFrame(mask_rows).to_csv(mask_csv, index=False)
+        print(f"   - {mask_csv}  (debug)")
+
+    # --------------------------
+    # 6) Subject-wise summary (Fig.3) — median + IQR
+    # --------------------------
+    # Segment-level (PCC/MRE) per subject
+    subj_rows = []
+    for sid, g in df_seg.groupby("subject_id"):
+        pcc_stats = _median_iqr_series(g["pcc"])
+        mre_stats = _median_iqr_series(g["mre"])
+        subj_rows.append({
+            "subject_id": int(sid),
+            "pcc_median": pcc_stats["median"],
+            "pcc_p25": pcc_stats["p25"],
+            "pcc_p75": pcc_stats["p75"],
+            "mre_median": mre_stats["median"],
+        })
+
+    df_subject = pd.DataFrame(subj_rows).sort_values("subject_id").reset_index(drop=True)
+
+    # Beat-level errors aggregated per subject (median of beat errors)
+    if not df_beat.empty:
+        beat_agg = df_beat.groupby("subject_id").agg(
+            rr_err_median_ms=("rr_err_ms", "median"),
+            qrs_err_median_ms=("qrs_err_ms", "median"),
+            qt_err_median_ms=("qt_err_ms", "median"),
+        ).reset_index()
+        df_subject = df_subject.merge(beat_agg, on="subject_id", how="left")
+
+    subject_csv = os.path.join(result_dir, "subject_summary.csv")
+    df_subject.to_csv(subject_csv, index=False)
+    print(f"   - {subject_csv}")
+
+    # --------------------------
+    # 7) Global summary JSON (Table III) — median-first + beats validity
+    # --------------------------
+    summary = summarize_metrics(segment_rows, beat_rows_all)
+    summary["exp_name"] = Config.EXP_NAME
+    summary["n_subjects"] = int(df_subject.shape[0])
+
+    # beats validity info (explicitly required by protocol)
+    summary["counts"]["n_beats_total"] = int(beats_total_sum)
+    summary["counts"]["n_beats_valid"] = int(beats_valid_sum)
+    summary["counts"]["drop_rate"] = float(
+        1.0 - (beats_valid_sum / max(beats_total_sum, 1))
+    )
+    summary["counts"]["drop_reasons"] = drop_reason_counter
+
+    global_json = os.path.join(result_dir, "global_summary.json")
+    with open(global_json, "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2)
+    print(f"   - {global_json}")
+
+    # --------------------------
+    # 8) Fixed Fig.2 sample pointer + case exports (Fig.1 optional)
+    # --------------------------
+    fig2_sid, fig2_segid = _choose_fig2_sample(df_seg, prefer_subject=args.prefer_fig2_subject)
+
     meta = MetaInfo(
         exp_name=Config.EXP_NAME,
-        alpha=float(args.alpha),
-        beta=float(args.beta),
-        gamma=float(args.gamma),
         exp_tag=str(args.exp_tag),
         seed=int(Config.SEED),
         device=str(device),
         fs=int(fs),
-        qc_test_bad_indices_path=bad_path,
-        ckpt_path=ckpt_path,
+        ckpt_path=str(ckpt_path),
+        ckpt_mode=str(ckpt_mode),
         timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
-        stft_fmin=getattr(Config, "STFT_FMIN", None),
-        stft_fmax=getattr(Config, "STFT_FMAX", None),
-        stft_use_band=getattr(Config, "STFT_USE_BAND", None),
-        anchor_from_logits=getattr(Config, "ANCHOR_FROM_LOGITS", None),
-        anchor_pos_weight=getattr(Config, "ANCHOR_POS_WEIGHT", None),
+        fig2_subject_id=int(fig2_sid),
+        fig2_seg_id=int(fig2_segid),
+        test_h5=str(Config.TEST_H5),
+        test_bad_indices_path=bad_path,
+        nk_method=str(args.nk_method),
+        rpeak_match_ms=float(args.rpeak_match_ms),
     )
-    with open(os.path.join(result_dir, "meta.json"), "w", encoding="utf-8") as f:
+    meta_json = os.path.join(result_dir, "meta.json")
+    with open(meta_json, "w", encoding="utf-8") as f:
         json.dump(asdict(meta), f, indent=2)
+    print(f"   - {meta_json}")
 
-    # --------------------------
-    # 5) Inference + metrics
-    # --------------------------
-    seg_rows: List[Dict[str, Any]] = []
-    clinical_rows: List[Dict[str, Any]] = []
-    mask_rows: List[Dict[str, Any]] = []
+    if args.save_cases:
+        print("\n🧪 Exporting protocol cases ...")
 
-    # for case export / compatibility export
-    pcc_list: List[float] = []
-    pool_for_cases: List[Dict[str, Any]] = []
-
-    # optional per-segment npz (huge)
-    full_npz_buffers = []
-
-    print(f"🚀 Running inference on {len(test_set)} segments ...")
-    with torch.no_grad():
-        for seg_id, (radar, ecg, mask_true, subject_id) in enumerate(tqdm(test_loader, desc="Testing")):
-            radar = radar.to(device)
-            ecg = ecg.to(device)
-            mask_true = mask_true.to(device)
-
-            pred_ecg, pred_mask_logits = model(radar)  # pred_mask is logits
-
-            # ---- waveform metrics ----
-            wave_m = calculate_metrics(pred_ecg, ecg)
-            pcc_val = float(wave_m.get("Pearson", np.nan))
-            mae_val = float(wave_m.get("MAE", np.nan))
-            rmse_val = float(wave_m.get("RMSE", np.nan))
-
-            # ---- numpy vectors ----
-            p_np = _to_1d(pred_ecg)
-            t_np = _to_1d(ecg)
-            r_np = _to_1d(radar)
-
-            pm_prob = _sigmoid_np(pred_mask_logits).reshape(-1)
-            tm_np = _to_1d(mask_true)
-
-            # ---- clinical ----
-            p_feat = _safe_feat(p_np, fs=fs)
-            t_feat = _safe_feat(t_np, fs=fs)
-
-            # ---- mask quality ----
-            tm_bin = (tm_np >= 0.5).astype(np.int32)
-            pm_bin = _threshold_mask(pm_prob, thr=float(args.mask_thr))
-            f1, prec, rec = _f1_precision_recall(pm_bin, tm_bin)
-
-            sid = int(subject_id.item())
-
-            # segment metrics
-            seg_rows.append({
-                "seg_id": int(seg_id),
-                "Subject_ID": sid,
-                "PCC": pcc_val,
-                "MAE": mae_val,
-                "RMSE": rmse_val,
-            })
-
-            # clinical metrics
-            row_c = {
-                "seg_id": int(seg_id),
-                "Subject_ID": sid,
-                "HR_True": t_feat["HR"], "HR_Pred": p_feat["HR"],
-                "RR_True": t_feat["RR"], "RR_Pred": p_feat["RR"],
-                "QRS_True": t_feat["QRS"], "QRS_Pred": p_feat["QRS"],
-                "QT_True": t_feat["QT"], "QT_Pred": p_feat["QT"],
-            }
-            row_c["HR_Error"] = abs(row_c["HR_Pred"] - row_c["HR_True"]) if np.isfinite(row_c["HR_Pred"]) and np.isfinite(row_c["HR_True"]) else np.nan
-            row_c["RR_Error"] = abs(row_c["RR_Pred"] - row_c["RR_True"]) if np.isfinite(row_c["RR_Pred"]) and np.isfinite(row_c["RR_True"]) else np.nan
-            row_c["QRS_Error"] = abs(row_c["QRS_Pred"] - row_c["QRS_True"]) if np.isfinite(row_c["QRS_Pred"]) and np.isfinite(row_c["QRS_True"]) else np.nan
-            row_c["QT_Error"]  = abs(row_c["QT_Pred"] - row_c["QT_True"]) if np.isfinite(row_c["QT_Pred"]) and np.isfinite(row_c["QT_True"]) else np.nan
-            clinical_rows.append(row_c)
-
-            # mask metrics
-            mask_rows.append({
-                "seg_id": int(seg_id),
-                "Subject_ID": sid,
-                "Mask_F1": float(f1),
-                "Mask_Precision": float(prec),
-                "Mask_Recall": float(rec),
-                "Mask_Prob_Mean": float(np.mean(pm_prob)),
-                "Mask_Prob_Max": float(np.max(pm_prob)),
-                "Mask_True_Sparsity": float(np.mean(tm_bin)),
-                "Mask_Pred_Sparsity": float(np.mean(pm_bin)),
-            })
-
-            pcc_list.append(pcc_val)
-
-            # pool for case selection / compatibility npz
-            pool_for_cases.append({
-                "seg_id": int(seg_id),
-                "Subject_ID": sid,
-                "pcc": pcc_val,
-                "radar": r_np.astype(np.float32),
-                "ecg_true": t_np.astype(np.float32),
-                "ecg_pred": p_np.astype(np.float32),
-                "mask_true": tm_bin.astype(np.int16),
-                "mask_prob": pm_prob.astype(np.float32),
-            })
-
-            if args.export_full_npz:
-                full_npz_buffers.append({
-                    "seg_id": int(seg_id),
-                    "Subject_ID": sid,
-                    "radar": r_np.astype(np.float32),
-                    "ecg_true": t_np.astype(np.float32),
-                    "ecg_pred": p_np.astype(np.float32),
-                    "mask_true": tm_bin.astype(np.int16),
-                    "mask_prob": pm_prob.astype(np.float32),
-                })
-
-    # --------------------------
-    # 6) Save CSVs (segment-level)
-    # --------------------------
-    df_seg = pd.DataFrame(seg_rows)
-    df_clin = pd.DataFrame(clinical_rows)
-    df_mask = pd.DataFrame(mask_rows)
-
-    seg_csv = os.path.join(result_dir, "segment_metrics.csv")
-    clin_csv = os.path.join(result_dir, "clinical_metrics.csv")
-    mask_csv = os.path.join(result_dir, "mask_metrics.csv")
-
-    df_seg.to_csv(seg_csv, index=False)
-    df_clin.to_csv(clin_csv, index=False)
-    df_mask.to_csv(mask_csv, index=False)
-
-    print(f"\n✅ Saved:")
-    print(f"   - {seg_csv}")
-    print(f"   - {clin_csv}")
-    print(f"   - {mask_csv}")
-
-    # --------------------------
-    # 6.1) Compatibility outputs (do NOT break old structure)
-    # --------------------------
-    # test_comprehensive.csv = segment + clinical (+ optionally mask_f1)
-    df_comp = df_seg.merge(df_clin, on=["seg_id", "Subject_ID"], how="left").merge(
-        df_mask[["seg_id", "Subject_ID", "Mask_F1"]], on=["seg_id", "Subject_ID"], how="left"
-    )
-    comp_csv = os.path.join(result_dir, "test_comprehensive.csv")
-    df_comp.to_csv(comp_csv, index=False)
-    print(f"   - {comp_csv} (compat)")
-
-    # bland–altman pairs convenience file (true/pred pairs)
-    ba_cols = ["Subject_ID", "seg_id", "HR_True", "HR_Pred", "RR_True", "RR_Pred", "QRS_True", "QRS_Pred", "QT_True", "QT_Pred"]
-    ba_csv = os.path.join(result_dir, "bland_altman_pairs.csv")
-    df_clin[ba_cols].to_csv(ba_csv, index=False)
-    print(f"   - {ba_csv} (pairs for BA/scatter)")
-
-    # 7) Subject-wise summary (inter-subject)
-    # 关键修复：seg_id 不应参与 subject-level 聚合，否则 join 会出现列名冲突（seg_id overlap）
-    df_seg_subj  = df_seg.drop(columns=["seg_id"], errors="ignore")
-    df_clin_subj = df_clin.drop(columns=["seg_id"], errors="ignore")
-    df_mask_subj = df_mask.drop(columns=["seg_id"], errors="ignore")
-
-    subj_seg  = df_seg_subj.groupby("Subject_ID").mean(numeric_only=True)
-    subj_clin = df_clin_subj.groupby("Subject_ID").mean(numeric_only=True)
-    subj_mask = df_mask_subj.groupby("Subject_ID").mean(numeric_only=True)
-
-    # 合并：subject-level 表
-    df_subject = subj_seg.join(subj_clin, how="outer").join(subj_mask, how="outer")
-    subject_csv = os.path.join(result_dir, "subject_summary.csv")
-    df_subject.reset_index().to_csv(subject_csv, index=False)
-    print(f"   - {subject_csv}")
-
-
-    # --------------------------
-    # 8) Global summary JSON (publication-ready)
-    # --------------------------
-    def _col_or_nan(df: pd.DataFrame, col: str) -> np.ndarray:
-        if col in df.columns:
-            return df[col].values
-        return np.asarray([], dtype=np.float64)
-
-    global_summary = {
-        "exp_name": Config.EXP_NAME,
-        "n_segments": int(len(df_seg)),
-        "n_subjects": int(df_subject.shape[0]),
-        "segment_level": {
-            "PCC": _nan_summary(df_seg["PCC"].values),
-            "MAE": _nan_summary(df_seg["MAE"].values),
-            "RMSE": _nan_summary(df_seg["RMSE"].values),
-            "Mask_F1": _nan_summary(_col_or_nan(df_mask, "Mask_F1")),
-        },
-        "subject_level": {
-            "PCC": _nan_summary(_col_or_nan(df_subject, "PCC")),
-            "MAE": _nan_summary(_col_or_nan(df_subject, "MAE")),
-            "RMSE": _nan_summary(_col_or_nan(df_subject, "RMSE")),
-            "HR_Error": _nan_summary(_col_or_nan(df_subject, "HR_Error")),
-            "RR_Error": _nan_summary(_col_or_nan(df_subject, "RR_Error")),
-            "QRS_Error": _nan_summary(_col_or_nan(df_subject, "QRS_Error")),
-            "QT_Error": _nan_summary(_col_or_nan(df_subject, "QT_Error")),
-            "Mask_F1": _nan_summary(_col_or_nan(df_subject, "Mask_F1")),
-        },
-    }
-
-    global_json = os.path.join(result_dir, "global_summary.json")
-    with open(global_json, "w", encoding="utf-8") as f:
-        json.dump(global_summary, f, indent=2)
-    print(f"   - {global_json}")
-
-    # --------------------------
-    # 9) Case export (best/worst/median/random)
-    # --------------------------
-    case_idx = _topk_case_indices(pcc_list, k=int(args.save_cases_k))
-    print("\n🧪 Exporting representative cases:")
-    print(f"   best   : {case_idx['best']}")
-    print(f"   worst  : {case_idx['worst']}")
-    print(f"   median : {case_idx['median']}")
-    print(f"   random : {case_idx['random']}")
-
-    def _save_case(case_name: str, indices: List[int]):
-        for j, idx in enumerate(indices):
-            item = pool_for_cases[idx]
-            out_path = os.path.join(
-                cases_dir,
-                f"{case_name}_k{j}_seg{item['seg_id']}_sid{item['Subject_ID']}_pcc{item['pcc']:.3f}.npz"
+        # Fig.2 sample
+        if fig2_segid in cache:
+            item = cache[fig2_segid]
+            fig2_path = os.path.join(cases_dir, f"fig2_sample_sid{fig2_sid}_seg{fig2_segid}.npz")
+            _save_npz_case(
+                fig2_path,
+                radar_1d=item["radar"],
+                gt_1d=item["ecg_true"],
+                pred_1d=item["ecg_pred"],
+                meta={"subject_id": int(fig2_sid), "seg_id": int(fig2_segid), "pcc": float(item["pcc"])}
             )
-            np.savez(
+            print(f"   - Fig.2 sample: {fig2_path}")
+        else:
+            print("   [WARN] Fig.2 sample waveform not cached (unexpected).")
+
+        # Fig.1 per-subject median cases:
+        # For each subject: sort by PCC and take median segment
+        df_seg_sorted = df_seg.sort_values(["subject_id", "pcc"]).reset_index(drop=True)
+        for sid in sorted(df_seg["subject_id"].unique().tolist()):
+            df_s = df_seg_sorted[df_seg_sorted["subject_id"] == sid].reset_index(drop=True)
+            if len(df_s) == 0:
+                continue
+            mid = int(len(df_s) // 2)
+            segid = int(df_s.loc[mid, "seg_id"])
+            pccv = float(df_s.loc[mid, "pcc"])
+
+            if segid not in cache:
+                continue
+            item = cache[segid]
+            out_path = os.path.join(cases_dir, f"subject_{sid}_median_seg{segid}_pcc{pccv:.3f}.npz")
+            _save_npz_case(
                 out_path,
-                radar=item["radar"],
-                ecg_true=item["ecg_true"],
-                ecg_pred=item["ecg_pred"],
-                mask_true=item["mask_true"],
-                mask_prob=item["mask_prob"],
-                pcc=np.array([item["pcc"]], dtype=np.float32),
-                seg_id=np.array([item["seg_id"]], dtype=np.int32),
-                subject_id=np.array([item["Subject_ID"]], dtype=np.int32),
+                radar_1d=item["radar"],
+                gt_1d=item["ecg_true"],
+                pred_1d=item["ecg_pred"],
+                meta={"subject_id": int(sid), "seg_id": int(segid), "pcc": float(pccv)}
             )
 
-    _save_case("best", case_idx["best"])
-    _save_case("worst", case_idx["worst"])
-    _save_case("median", case_idx["median"])
-    _save_case("random", case_idx["random"])
-    print(f"   - cases saved under: {cases_dir}")
-
-    # compatibility visualization_data.npz (best/median/worst single examples)
-    # choose best/worst/median based on PCC order
-    if len(pool_for_cases) > 0:
-        pcc_sort = np.nan_to_num(np.asarray(pcc_list, dtype=np.float64), nan=-1e9)
-        order = np.argsort(pcc_sort)
-        worst_item = pool_for_cases[int(order[0])]
-        best_item = pool_for_cases[int(order[-1])]
-        median_item = pool_for_cases[int(order[len(order)//2])]
-
-        vis_npz = os.path.join(result_dir, "visualization_data.npz")
-        np.savez(
-            vis_npz,
-            best_radar=best_item["radar"],
-            best_ecg_true=best_item["ecg_true"],
-            best_ecg_pred=best_item["ecg_pred"],
-            best_mask_true=best_item["mask_true"],
-            best_mask_pred=best_item["mask_prob"],
-
-            median_radar=median_item["radar"],
-            median_ecg_true=median_item["ecg_true"],
-            median_ecg_pred=median_item["ecg_pred"],
-            median_mask_true=median_item["mask_true"],
-            median_mask_pred=median_item["mask_prob"],
-
-            worst_radar=worst_item["radar"],
-            worst_ecg_true=worst_item["ecg_true"],
-            worst_ecg_pred=worst_item["ecg_pred"],
-            worst_mask_true=worst_item["mask_true"],
-            worst_mask_pred=worst_item["mask_prob"],
-        )
-        print(f"   - {vis_npz} (compat)")
-
-    # Optional: full NPZ dump (huge)
-    if args.export_full_npz and len(full_npz_buffers) > 0:
-        full_dir = os.path.join(result_dir, "full_npz")
-        _ensure_dir(full_dir)
-        for item in full_npz_buffers:
-            out_path = os.path.join(full_dir, f"seg{item['seg_id']}_sid{item['Subject_ID']}.npz")
-            np.savez(out_path, **item)
-        print(f"   - full npz saved under: {full_dir} (⚠️ may be very large)")
-
-    # --------------------------
-    # 10) Quick stats
-    # --------------------------
-    print("\n📊 Quick Stats (subject-wise mean ± std):")
-    for col in ["PCC", "MAE", "RMSE", "HR_Error", "RR_Error", "QRS_Error", "QT_Error", "Mask_F1"]:
-        if col in df_subject.columns:
-            mu = np.nanmean(df_subject[col].values)
-            sd = np.nanstd(df_subject[col].values)
-            print(f"   {col:10s}: {mu:.4f} ± {sd:.4f}")
+        print(f"   - Cases saved under: {cases_dir}")
 
     print("\n✅ Test finished successfully.")
     print(f"   Results directory: {result_dir}")
