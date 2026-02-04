@@ -113,9 +113,18 @@ def compute_segment_metrics(pred_1d, gt_1d, eps=1e-8):
 
     # MRE (robust): mean( |p-g| / (|g| + eps) )
     # This is stable for near-zero gt values (common after normalization).
-    mre = float(np.mean(np.abs(diff) / (np.abs(g) + eps)))
+    mre_num = float(np.sum(np.abs(diff)))
+    mre_den = float(np.sum(np.abs(g)) + eps)
+    mre = float(mre_num / mre_den)
+    return {
+    "pcc": float(pcc),
+    "mre": mre,
+    "mre_num": mre_num,
+    "mre_den": mre_den,
+    "mae": mae,
+    "rmse": rmse,
+    }
 
-    return {"pcc": float(pcc), "mre": mre, "mae": mae, "rmse": rmse}
 
 
 # -----------------------------

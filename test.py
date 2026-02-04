@@ -115,6 +115,11 @@ def test():
     )
 
     parser.add_argument("--exp_tag", type=str, default="Default")
+    
+    parser.add_argument("--alpha", type=float, default=None)
+    parser.add_argument("--beta",  type=float, default=None)
+    parser.add_argument("--gamma", type=float, default=None)
+
 
     # checkpoint control
     parser.add_argument("--ckpt", type=str, default="best",
@@ -141,7 +146,15 @@ def test():
     # --------------------------
     # 1) Setup experiment paths
     # --------------------------
-    Config.update_paths(f"{args.exp_tag}")
+    # ---- Resolve loss weights (CLI > Config fallback) ----
+    alpha = float(args.alpha) if args.alpha is not None else float(getattr(Config, "ALPHA", 1.0))
+    beta  = float(args.beta)  if args.beta  is not None else float(getattr(Config, "BETA", 0.0))
+    gamma = float(args.gamma) if args.gamma is not None else float(getattr(Config, "GAMMA", 0.0))
+
+    # ---- IMPORTANT: EXP_NAME must match train.py ----
+    new_exp_name = f"Exp_a{alpha}_b{beta}_g{gamma}_{args.exp_tag}"
+    Config.update_paths(new_exp_name)
+
     seed_everything(Config.SEED)
     device = Config.DEVICE
     fs = int(getattr(Config, "FS_TARGET", getattr(Config, "FS", 200)))

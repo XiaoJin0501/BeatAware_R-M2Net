@@ -153,7 +153,14 @@ for i in "${!VAR_NAMES[@]}"; do
   if [[ "${RUN_TEST}" == "1" ]]; then
     echo ""
     echo "---------------------- TEST: ${EXP_TAG} ----------------------"
-    python test.py --ckpt "${CKPT_MODE}" --exp_tag "${EXP_TAG}" --save_cases
+    python test.py \
+      --ckpt "${CKPT_MODE}" \
+      --exp_tag "${EXP_TAG}" \
+      --alpha "${A}" \
+      --beta  "${B}" \
+      --gamma "${G}" \
+      --save_cases
+
     echo "--------------------------------------------------------------"
   fi
 

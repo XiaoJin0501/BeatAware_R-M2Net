@@ -1,0 +1,16 @@
+{
+  "exp_name": "Exp_a1.0_b0.0_g0.0_PaperAblation_v1_L0_TimeOnly",
+  "exp_tag": "PaperAblation_v1_L0_TimeOnly",
+  "seed": 42,
+  "device": "cuda",
+  "fs": 200,
+  "ckpt_path": "/root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.0_g0.0_PaperAblation_v1_L0_TimeOnly/checkpoints/Exp_a1.0_b0.0_g0.0_PaperAblation_v1_L0_TimeOnly_best.pth",
+  "ckpt_mode": "best",
+  "timestamp": "2026-02-04 10:38:07",
+  "fig2_subject_id": 25,
+  "fig2_seg_id": 280,
+  "test_h5": "/root/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent/test.h5",
+  "test_bad_indices_path": "/root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/test_bad_indices.npy",
+  "nk_method": "peak",
+  "rpeak_match_ms": 150.0
+}
