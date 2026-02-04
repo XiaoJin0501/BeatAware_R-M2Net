@@ -1,0 +1,137 @@
+[2026-02-04 10:53:59] INFO: 🚀 Experiment Started: Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0
+[2026-02-04 10:53:59] INFO: 📊 Hyperparams: Alpha=1.0, Beta=0.5, Gamma=1.0
+[2026-02-04 10:53:59] INFO: 📂 Data Directory: /root/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2026-02-04 10:53:59] INFO: 💻 Device: cuda
+[2026-02-04 10:53:59] INFO: [QC] TRAIN_BAD_INDICES_PATH = /root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/train_bad_indices.npy
+[2026-02-04 10:53:59] INFO: [QC] TEST_BAD_INDICES_PATH  = /root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/test_bad_indices.npy
+[2026-02-04 10:53:59] INFO: [VAL] VAL_SUBJECTS = [21, 23]
+[2026-02-04 10:53:59] INFO: [DATA] Train subset: 2305 | Val subset: 617 | Test set: 1161
+[2026-02-04 10:53:59] INFO: ⏳ Initializing model and optimizer...
+[2026-02-04 10:54:00] INFO: Model initialized with 403202 trainable parameters.
+[2026-02-04 10:54:00] INFO: [META] saved to: /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/logs/train_meta.json
+[2026-02-04 10:54:00] INFO: ================================================================================
+[2026-02-04 10:54:00] INFO: [META] Snapshot
+[2026-02-04 10:54:00] INFO: [META] EXP_NAME          : Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0
+[2026-02-04 10:54:00] INFO: [META] EXP_TAG           : PaperAblation_v1_Lbeta0p5_gamma1p0
+[2026-02-04 10:54:00] INFO: [META] ALPHA/BETA/GAMMA  : 1.0/0.5/1.0
+[2026-02-04 10:54:00] INFO: [META] VAL_SUBJECTS      : [21, 23]
+[2026-02-04 10:54:00] INFO: [META] N_train/N_val/N_test : 2305/617/1161
+[2026-02-04 10:54:00] INFO: [META] TRAIN_H5          : /root/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent/train.h5
+[2026-02-04 10:54:00] INFO: [META] TEST_H5           : /root/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent/test.h5
+[2026-02-04 10:54:00] INFO: [META] Train bad idx     : /root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/train_bad_indices.npy
+[2026-02-04 10:54:00] INFO: [META] Test  bad idx     : /root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/test_bad_indices.npy
+[2026-02-04 10:54:00] INFO: ================================================================================
+[2026-02-04 10:54:00] INFO: No checkpoint found. Starting fresh training.
+[2026-02-04 10:56:09] INFO: Epoch 001 | Train Total: 1.7969 (L1: 0.2167, STFT: 0.7716, Anchor: 1.5788, Smooth: 0.0192) | Val Total: 1.3962 (L1: 0.1501, STFT: 0.4899, Anchor: 1.4649, Smooth: 0.0238)
+[2026-02-04 10:56:09] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 10:56:09] INFO: Best model saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_best.pth
+[2026-02-04 10:58:17] INFO: Epoch 002 | Train Total: 1.4935 (L1: 0.1490, STFT: 0.5428, Anchor: 1.5621, Smooth: 0.0206) | Val Total: 1.4259 (L1: 0.1798, STFT: 0.5032, Anchor: 1.4480, Smooth: 0.0190)
+[2026-02-04 10:58:17] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 10:58:17] INFO: No improvement for 1/20 epochs.
+[2026-02-04 11:00:25] INFO: Epoch 003 | Train Total: 1.4501 (L1: 0.1395, STFT: 0.5173, Anchor: 1.5485, Smooth: 0.0191) | Val Total: 1.3853 (L1: 0.1771, STFT: 0.4731, Anchor: 1.4344, Smooth: 0.0180)
+[2026-02-04 11:00:25] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:00:25] INFO: Best model saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_best.pth
+[2026-02-04 11:02:33] INFO: Epoch 004 | Train Total: 1.4079 (L1: 0.1296, STFT: 0.4913, Anchor: 1.5367, Smooth: 0.0187) | Val Total: 1.3156 (L1: 0.1543, STFT: 0.4292, Anchor: 1.4262, Smooth: 0.0190)
+[2026-02-04 11:02:33] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:02:33] INFO: Best model saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_best.pth
+[2026-02-04 11:04:41] INFO: Epoch 005 | Train Total: 1.3618 (L1: 0.1202, STFT: 0.4600, Anchor: 1.5254, Smooth: 0.0189) | Val Total: 1.2702 (L1: 0.1390, STFT: 0.4013, Anchor: 1.4206, Smooth: 0.0196)
+[2026-02-04 11:04:41] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:04:41] INFO: Best model saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_best.pth
+[2026-02-04 11:06:49] INFO: Epoch 006 | Train Total: 1.3111 (L1: 0.1107, STFT: 0.4232, Anchor: 1.5154, Smooth: 0.0195) | Val Total: 1.2792 (L1: 0.1329, STFT: 0.4171, Anchor: 1.4170, Smooth: 0.0207)
+[2026-02-04 11:06:49] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:06:49] INFO: No improvement for 1/20 epochs.
+[2026-02-04 11:08:57] INFO: Epoch 007 | Train Total: 1.2654 (L1: 0.1024, STFT: 0.3899, Anchor: 1.5065, Smooth: 0.0198) | Val Total: 1.2383 (L1: 0.1188, STFT: 0.3912, Anchor: 1.4154, Smooth: 0.0206)
+[2026-02-04 11:08:57] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:08:57] INFO: Best model saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_best.pth
+[2026-02-04 11:11:06] INFO: Epoch 008 | Train Total: 1.2313 (L1: 0.0960, STFT: 0.3659, Anchor: 1.4992, Smooth: 0.0198) | Val Total: 1.2578 (L1: 0.1248, STFT: 0.4057, Anchor: 1.4153, Smooth: 0.0196)
+[2026-02-04 11:11:06] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:11:06] INFO: No improvement for 1/20 epochs.
+[2026-02-04 11:13:13] INFO: Epoch 009 | Train Total: 1.2103 (L1: 0.0927, STFT: 0.3510, Anchor: 1.4931, Smooth: 0.0200) | Val Total: 1.3093 (L1: 0.1480, STFT: 0.4345, Anchor: 1.4169, Smooth: 0.0184)
+[2026-02-04 11:13:13] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:13:13] INFO: No improvement for 2/20 epochs.
+[2026-02-04 11:15:22] INFO: Epoch 010 | Train Total: 1.1933 (L1: 0.0897, STFT: 0.3397, Anchor: 1.4878, Smooth: 0.0200) | Val Total: 1.2455 (L1: 0.1145, STFT: 0.4011, Anchor: 1.4198, Smooth: 0.0200)
+[2026-02-04 11:15:22] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:15:22] INFO: No improvement for 3/20 epochs.
+[2026-02-04 11:17:29] INFO: Epoch 011 | Train Total: 1.1802 (L1: 0.0882, STFT: 0.3300, Anchor: 1.4837, Smooth: 0.0201) | Val Total: 1.2631 (L1: 0.1148, STFT: 0.4181, Anchor: 1.4222, Smooth: 0.0191)
+[2026-02-04 11:17:29] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:17:29] INFO: No improvement for 4/20 epochs.
+[2026-02-04 11:19:37] INFO: Epoch 012 | Train Total: 1.1645 (L1: 0.0859, STFT: 0.3186, Anchor: 1.4802, Smooth: 0.0199) | Val Total: 1.2689 (L1: 0.1147, STFT: 0.4216, Anchor: 1.4259, Smooth: 0.0195)
+[2026-02-04 11:19:37] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:19:37] INFO: No improvement for 5/20 epochs.
+[2026-02-04 11:21:45] INFO: Epoch 013 | Train Total: 1.1519 (L1: 0.0842, STFT: 0.3094, Anchor: 1.4774, Smooth: 0.0197) | Val Total: 1.2640 (L1: 0.1219, STFT: 0.4087, Anchor: 1.4289, Smooth: 0.0190)
+[2026-02-04 11:21:45] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:21:45] INFO: No improvement for 6/20 epochs.
+[2026-02-04 11:23:52] INFO: Epoch 014 | Train Total: 1.1449 (L1: 0.0839, STFT: 0.3040, Anchor: 1.4752, Smooth: 0.0194) | Val Total: 1.2914 (L1: 0.1214, STFT: 0.4339, Anchor: 1.4321, Smooth: 0.0201)
+[2026-02-04 11:23:52] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:23:52] INFO: No improvement for 7/20 epochs.
+[2026-02-04 11:26:00] INFO: Epoch 015 | Train Total: 1.1325 (L1: 0.0821, STFT: 0.2945, Anchor: 1.4734, Smooth: 0.0192) | Val Total: 1.2796 (L1: 0.1174, STFT: 0.4245, Anchor: 1.4349, Smooth: 0.0202)
+[2026-02-04 11:26:00] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:26:00] INFO: No improvement for 8/20 epochs.
+[2026-02-04 11:28:08] INFO: Epoch 016 | Train Total: 1.1234 (L1: 0.0809, STFT: 0.2877, Anchor: 1.4717, Smooth: 0.0190) | Val Total: 1.2757 (L1: 0.1215, STFT: 0.4159, Anchor: 1.4374, Smooth: 0.0196)
+[2026-02-04 11:28:08] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:28:08] INFO: No improvement for 9/20 epochs.
+[2026-02-04 11:30:15] INFO: Epoch 017 | Train Total: 1.1154 (L1: 0.0801, STFT: 0.2810, Anchor: 1.4706, Smooth: 0.0190) | Val Total: 1.2683 (L1: 0.1139, STFT: 0.4144, Anchor: 1.4398, Smooth: 0.0201)
+[2026-02-04 11:30:15] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:30:15] INFO: No improvement for 10/20 epochs.
+[2026-02-04 11:32:23] INFO: Epoch 018 | Train Total: 1.1078 (L1: 0.0792, STFT: 0.2750, Anchor: 1.4696, Smooth: 0.0189) | Val Total: 1.2972 (L1: 0.1209, STFT: 0.4358, Anchor: 1.4417, Smooth: 0.0197)
+[2026-02-04 11:32:23] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:32:23] INFO: No improvement for 11/20 epochs.
+[2026-02-04 11:34:31] INFO: Epoch 019 | Train Total: 1.1027 (L1: 0.0787, STFT: 0.2710, Anchor: 1.4686, Smooth: 0.0188) | Val Total: 1.3053 (L1: 0.1308, STFT: 0.4342, Anchor: 1.4441, Smooth: 0.0183)
+[2026-02-04 11:34:31] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:34:31] INFO: No improvement for 12/20 epochs.
+[2026-02-04 11:36:39] INFO: Epoch 020 | Train Total: 1.0965 (L1: 0.0778, STFT: 0.2660, Anchor: 1.4679, Smooth: 0.0187) | Val Total: 1.2718 (L1: 0.1175, STFT: 0.4123, Anchor: 1.4458, Smooth: 0.0190)
+[2026-02-04 11:36:39] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:36:39] INFO: No improvement for 13/20 epochs.
+[2026-02-04 11:38:47] INFO: Epoch 021 | Train Total: 1.0912 (L1: 0.0770, STFT: 0.2620, Anchor: 1.4671, Smooth: 0.0186) | Val Total: 1.2845 (L1: 0.1159, STFT: 0.4271, Anchor: 1.4465, Smooth: 0.0182)
+[2026-02-04 11:38:47] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:38:47] INFO: No improvement for 14/20 epochs.
+[2026-02-04 11:40:53] INFO: Epoch 022 | Train Total: 1.0869 (L1: 0.0764, STFT: 0.2585, Anchor: 1.4668, Smooth: 0.0186) | Val Total: 1.2903 (L1: 0.1170, STFT: 0.4306, Anchor: 1.4477, Smooth: 0.0188)
+[2026-02-04 11:40:54] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:40:54] INFO: No improvement for 15/20 epochs.
+[2026-02-04 11:43:02] INFO: Epoch 023 | Train Total: 1.0829 (L1: 0.0759, STFT: 0.2554, Anchor: 1.4663, Smooth: 0.0185) | Val Total: 1.3077 (L1: 0.1254, STFT: 0.4404, Anchor: 1.4496, Smooth: 0.0171)
+[2026-02-04 11:43:02] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:43:02] INFO: No improvement for 16/20 epochs.
+[2026-02-04 11:45:11] INFO: Epoch 024 | Train Total: 1.0787 (L1: 0.0754, STFT: 0.2519, Anchor: 1.4659, Smooth: 0.0184) | Val Total: 1.3222 (L1: 0.1354, STFT: 0.4446, Anchor: 1.4500, Smooth: 0.0173)
+[2026-02-04 11:45:11] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:45:11] INFO: No improvement for 17/20 epochs.
+[2026-02-04 11:47:20] INFO: Epoch 025 | Train Total: 1.0741 (L1: 0.0746, STFT: 0.2484, Anchor: 1.4654, Smooth: 0.0184) | Val Total: 1.2834 (L1: 0.1174, STFT: 0.4224, Anchor: 1.4505, Smooth: 0.0184)
+[2026-02-04 11:47:20] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:47:20] INFO: No improvement for 18/20 epochs.
+[2026-02-04 11:49:27] INFO: Epoch 026 | Train Total: 1.0702 (L1: 0.0740, STFT: 0.2455, Anchor: 1.4650, Smooth: 0.0183) | Val Total: 1.2929 (L1: 0.1166, STFT: 0.4317, Anchor: 1.4522, Smooth: 0.0185)
+[2026-02-04 11:49:27] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:49:27] INFO: No improvement for 19/20 epochs.
+[2026-02-04 11:51:35] INFO: Epoch 027 | Train Total: 1.0663 (L1: 0.0731, STFT: 0.2426, Anchor: 1.4647, Smooth: 0.0183) | Val Total: 1.2877 (L1: 0.1158, STFT: 0.4279, Anchor: 1.4518, Smooth: 0.0181)
+[2026-02-04 11:51:35] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 11:51:35] INFO: No improvement for 20/20 epochs.
+[2026-02-04 11:51:35] INFO: Early stopping triggered after 20 epochs with no improvement.
+[2026-02-04 11:51:35] INFO: Training Finished Successfully!
+[2026-02-04 12:35:15] INFO: 🚀 Experiment Started: Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0
+[2026-02-04 12:35:15] INFO: 📊 Hyperparams: Alpha=1.0, Beta=0.5, Gamma=1.0
+[2026-02-04 12:35:15] INFO: 📂 Data Directory: /root/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent
+[2026-02-04 12:35:15] INFO: 💻 Device: cuda
+[2026-02-04 12:35:15] INFO: [QC] TRAIN_BAD_INDICES_PATH = /root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/train_bad_indices.npy
+[2026-02-04 12:35:15] INFO: [QC] TEST_BAD_INDICES_PATH  = /root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/test_bad_indices.npy
+[2026-02-04 12:35:15] INFO: [VAL] VAL_SUBJECTS = [21, 23]
+[2026-02-04 12:35:15] INFO: [DATA] Train subset: 2305 | Val subset: 617 | Test set: 1161
+[2026-02-04 12:35:15] INFO: ⏳ Initializing model and optimizer...
+[2026-02-04 12:35:17] INFO: Model initialized with 403202 trainable parameters.
+[2026-02-04 12:35:17] INFO: [META] saved to: /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/logs/train_meta.json
+[2026-02-04 12:35:17] INFO: ================================================================================
+[2026-02-04 12:35:17] INFO: [META] Snapshot
+[2026-02-04 12:35:17] INFO: [META] EXP_NAME          : Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0
+[2026-02-04 12:35:17] INFO: [META] EXP_TAG           : PaperAblation_v1_Lbeta0p5_gamma1p0
+[2026-02-04 12:35:17] INFO: [META] ALPHA/BETA/GAMMA  : 1.0/0.5/1.0
+[2026-02-04 12:35:17] INFO: [META] VAL_SUBJECTS      : [21, 23]
+[2026-02-04 12:35:17] INFO: [META] N_train/N_val/N_test : 2305/617/1161
+[2026-02-04 12:35:17] INFO: [META] TRAIN_H5          : /root/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent/train.h5
+[2026-02-04 12:35:17] INFO: [META] TEST_H5           : /root/Projects/BeatAware_R-M2Net/data_preprocessing/processed_to_h5/experiment_A_SubjectIndependent/test.h5
+[2026-02-04 12:35:17] INFO: [META] Train bad idx     : /root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/train_bad_indices.npy
+[2026-02-04 12:35:17] INFO: [META] Test  bad idx     : /root/Projects/BeatAware_R-M2Net/data_preprocessing/qc_indices/test_bad_indices.npy
+[2026-02-04 12:35:17] INFO: ================================================================================
+[2026-02-04 12:35:17] INFO: Found checkpoint at /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth. Resuming training...
+[2026-02-04 12:35:17] INFO: Resumed from Epoch 27. Best Val Loss so far: 1.238272
+[2026-02-04 12:37:25] INFO: Epoch 028 | Train Total: 1.0666 (L1: 0.0735, STFT: 0.2428, Anchor: 1.4643, Smooth: 0.0182) | Val Total: 1.3153 (L1: 0.1198, STFT: 0.4529, Anchor: 1.4531, Smooth: 0.0161)
+[2026-02-04 12:37:26] INFO: Last checkpoint saved to /root/Projects/BeatAware_R-M2Net/experiments/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0/checkpoints/Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0_last.pth
+[2026-02-04 12:37:26] INFO: No improvement for 20/20 epochs.
+[2026-02-04 12:37:26] INFO: Early stopping triggered after 20 epochs with no improvement.
+[2026-02-04 12:37:26] INFO: Training Finished Successfully!

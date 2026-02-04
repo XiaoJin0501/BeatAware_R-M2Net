@@ -1,0 +1,53 @@
+{
+  "segment_level": {
+    "PCC": {
+      "median": 0.590070907845487,
+      "p25": 0.5534131216592484,
+      "p75": 0.6308625863060078,
+      "iqr": 0.07744946464675939,
+      "n": 1161
+    },
+    "MRE": {
+      "median": 0.3009140147078386,
+      "p25": 0.28092878239161295,
+      "p75": 0.31977569358395175,
+      "iqr": 0.038846911192338796,
+      "n": 1161
+    }
+  },
+  "beat_level": {
+    "RR_err_ms": {
+      "median": 5.0,
+      "p25": 0.0,
+      "p75": 45.0,
+      "iqr": 45.0,
+      "n": 2732
+    },
+    "QRS_err_ms": {
+      "median": NaN,
+      "p25": NaN,
+      "p75": NaN,
+      "iqr": NaN,
+      "n": 0
+    },
+    "QT_err_ms": {
+      "median": NaN,
+      "p25": NaN,
+      "p75": NaN,
+      "iqr": NaN,
+      "n": 0
+    }
+  },
+  "counts": {
+    "n_segments": 1161,
+    "n_beats": 2732,
+    "n_beats_total": 5010,
+    "n_beats_valid": 2732,
+    "drop_rate": 0.4546906187624751,
+    "drop_reasons": {
+      "rpeak_match_insufficient": 300
+    }
+  },
+  "exp_name": "Exp_a1.0_b0.5_g1.0_PaperAblation_v1_Lbeta0p5_gamma1p0",
+  "n_subjects": 3
+}

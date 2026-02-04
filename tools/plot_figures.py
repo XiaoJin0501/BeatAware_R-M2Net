@@ -203,7 +203,7 @@ def plot_fig2_time_frequency(cases_dir: str, meta: Dict[str, Any], out_dir: str,
     fig.colorbar(im3, ax=ax3, fraction=0.046, pad=0.04)
     fig.colorbar(im4, ax=ax4, fraction=0.046, pad=0.04)
 
-    fig.suptitle(f"Fig.2 Time–Frequency Analysis (sid={sid}, seg={seg})", y=1.02)
+    # fig.suptitle(f"Fig.2 Time–Frequency Analysis (sid={sid}, seg={seg})", y=1.02)
     plt.tight_layout()
 
     out_png = os.path.join(out_dir, "Fig2_time_frequency.png")
